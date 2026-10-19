@@ -57,7 +57,12 @@ module.exports = {
                     { name: '🌍 Global Schedule', value: glSchedule, inline: false },
                     {
                         name: '🏇 Course',
-                        value: `${targetCM.racecourse} ${targetCM.terrain} ${targetCM.length} ${targetCM.distance}`,
+                        value: `${targetCM.racecourse} ${targetCM.terrain}`,
+                        inline: true,
+                    },
+                    {
+                        name: '⛰️ Distance',
+                        value: `${targetCM.length} - ${targetCM.distance}`,
                         inline: true,
                     },
                     {
@@ -66,8 +71,18 @@ module.exports = {
                         inline: true,
                     },
                     {
-                        name: '🌤️ Conditions',
-                        value: `${targetCM.track_conditions} — ${targetCM.season} — ${targetCM.weather}`,
+                        name: '🏞️ Conditions',
+                        value: `${targetCM.track_conditions}`,
+                        inline: true,
+                    },
+                    {
+                        name: '🪟 Season',
+                        value: `${targetCM.season}`,
+                        inline: true,
+                    },
+                    {
+                        name: '🌤️ Weather',
+                        value: `${targetCM.weather}`,
                         inline: true,
                     }
                 )
