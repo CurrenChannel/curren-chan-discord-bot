@@ -5,7 +5,7 @@ const {
     PermissionFlagsBits,
     MessageFlags,
 } = require('discord.js');
-const { getOshiNames } = require('../../utils/oshiHelper');
+const { getUmaNames } = require('../../utils/oshiHelper');
 
 module.exports = {
     guildOnly: true,
@@ -17,7 +17,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const oshiNames = await getOshiNames();
+        const oshiNames = await getUmaNames();
         const CHUNK_SIZE = 25;
         const actionRows = [];
 

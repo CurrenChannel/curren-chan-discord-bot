@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { getOshiNames, assignOshiRole } = require('../../utils/oshiHelper');
+const { getUmaNames, assignOshiRole } = require('../../utils/oshiHelper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,7 +15,7 @@ module.exports = {
 
     async autocomplete(interaction) {
         const focusedValue = interaction.options.getFocused().toLowerCase();
-        const choices = await getOshiNames();
+        const choices = await getUmaNames();
 
         const filtered = choices
             .filter(choice => choice.toLowerCase().includes(focusedValue))
