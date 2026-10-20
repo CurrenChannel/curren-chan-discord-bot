@@ -2,12 +2,11 @@ require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags, PermissionsBitField } = require('discord.js');
-const { getUmaNames } = require('./utils/oshiHelper');
+const { getUmaNames, assignOshiRole } = require('./utils/oshiHelper');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.commands = new Collection();
-
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -32,22 +31,58 @@ client.once(Events.ClientReady, async (readyClient) => {
     console.log(`✅ Ready! Logged in as ${readyClient.user.tag}`);
 
     try {
-        await getUmaNames();
-        console.log('🥕 Uma names list pre-loaded successfully.');
+        const names = await getUmaNames();
+        console.log(`🥕 Pre-loaded ${names.length} Umamusume names into cache.`);
     } catch (err) {
-        console.warn('⚠️ Warning: Could not pre-load Uma name list on startup:', err.message);
+        console.error('❌ Failed to pre-load Uma names on startup:', err);
     }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+    // ---------------------------------------------------------
+    // Autocomplete
+    // ---------------------------------------------------------
+    if (interaction.isAutocomplete()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (!command || !command.autocomplete) {
+            console.warn(`⚠️ No autocomplete handler found for /${interaction.commandName}`);
+            return;
+        }
+
+        try {
+            await command.autocomplete(interaction);
+        } catch (error) {
+            console.error(`❌ Autocomplete error in /${interaction.commandName}:`, error);
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // Dropdown
+    // ---------------------------------------------------------
+    if (interaction.isStringSelectMenu()) {
+        console.log(`📥 Dropdown selected: ${interaction.customId} -> ${interaction.values[0]}`);
+
+        if (interaction.customId.startsWith('oshi_select_')) {
+            try {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                const selectedName = interaction.values[0];
+                const result = await assignOshiRole(interaction, selectedName);
+                await interaction.editReply({ content: result.message });
+            } catch (error) {
+                console.error('❌ Dropdown error:', error);
+            }
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // Slash commands
+    // ---------------------------------------------------------
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);
-
-    if (!command) {
-        console.error(`❌ No command matching ${interaction.commandName} was found.`);
-        return;
-    }
+    if (!command) return;
 
     if (command.category === 'admin' && !interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
         return interaction.reply({
@@ -59,7 +94,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
+        console.error(`❌ Command error in /${interaction.commandName}:`, error);
         const errorMessage = { content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral };
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(errorMessage);
