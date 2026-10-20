@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, MessageFlags, PermissionsBitField } = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -19,6 +19,7 @@ for (const folder of commandFolders) {
         const command = require(filePath);
 
         if ('data' in command && 'execute' in command) {
+            command.category = folder;
             client.commands.set(command.data.name, command);
         } else {
             console.warn(`⚠️ The command at ${filePath} is missing a required "data" or "execute" property.`);
@@ -38,6 +39,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!command) {
         console.error(`❌ No command matching ${interaction.commandName} was found.`);
         return;
+    }
+
+    if (command.category === 'admin' && !interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+        return interaction.reply({
+            content: '❌ You must be an **Administrator** to use this command.',
+            flags: MessageFlags.Ephemeral,
+        });
     }
 
     try {

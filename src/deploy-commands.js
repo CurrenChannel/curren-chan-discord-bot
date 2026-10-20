@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
-const { REST, Routes } = require('discord.js');
+const { REST, Routes, PermissionFlagsBits } = require('discord.js');
 
 const globalCommands = [];
 const guildCommands = [];
@@ -18,7 +18,11 @@ for (const folder of commandFolders) {
         const command = require(filePath);
 
         if ('data' in command && 'execute' in command) {
-            if (command.guildOnly) {
+            if (folder === 'admin') {
+                command.data.setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+            }
+
+            if (command.guildOnly || folder === 'admin') {
                 guildCommands.push(command.data.toJSON());
             } else {
                 globalCommands.push(command.data.toJSON());
