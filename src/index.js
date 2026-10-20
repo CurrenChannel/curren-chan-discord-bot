@@ -82,6 +82,54 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     // ---------------------------------------------------------
+    // Buttons
+    // ---------------------------------------------------------
+    if (interaction.isButton()) {
+        if (interaction.customId.startsWith('role_toggle_')) {
+            try {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                const roleId = interaction.customId.replace('role_toggle_', '');
+                const role = interaction.guild.roles.cache.get(roleId) || await interaction.guild.roles.fetch(roleId).catch(() => null);
+
+                if (!role) {
+                    return interaction.editReply({
+                        content: '❌ This role no longer exists on the server.',
+                    });
+                }
+
+                const botMember = await interaction.guild.members.fetchMe();
+                if (role.position >= botMember.roles.highest.position) {
+                    return interaction.editReply({
+                        content: `❌ I cannot assign **${role.name}** because it is higher than (or equal to) my highest role in Server Settings -> Roles.`,
+                    });
+                }
+
+                const member = interaction.member;
+                const hasRole = member.roles.cache.has(role.id);
+
+                if (hasRole) {
+                    await member.roles.remove(role);
+                    await interaction.editReply({
+                        content: `🗑️ Removed the **${role.name}** role.`,
+                    });
+                } else {
+                    await member.roles.add(role);
+                    await interaction.editReply({
+                        content: `✅ Added the **${role.name}** role!`,
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Button role toggle error:', error);
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.editReply({ content: '❌ Something went wrong while toggling your role.' });
+                }
+            }
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------
     // Slash commands
     // ---------------------------------------------------------
     if (!interaction.isChatInputCommand()) return;
