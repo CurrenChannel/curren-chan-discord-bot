@@ -65,10 +65,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         if (interaction.customId.startsWith('oshi_select_')) {
             try {
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                await interaction.update({ components: interaction.message.components });
+
                 const selectedName = interaction.values[0];
                 const result = await assignOshiRole(interaction, selectedName);
-                await interaction.editReply({ content: result.message });
+
+                await interaction.followUp({
+                    content: result.message,
+                    flags: MessageFlags.Ephemeral,
+                });
             } catch (error) {
                 console.error('❌ Dropdown error:', error);
             }
