@@ -11,7 +11,7 @@ async function getUmaNames() {
 
     const res = await fetch(UMA_LIST_URL);
     if (!res.ok) {
-        throw new Error(`Failed to fetch Oshi list (HTTP ${res.status})`);
+        throw new Error(`Failed to fetch Uma list (HTTP ${res.status})`);
     }
 
     const raw = await res.json();

@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags, PermissionsBitField } = require('discord.js');
+const { getUmaNames } = require('./utils/oshiHelper');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -27,8 +28,15 @@ for (const folder of commandFolders) {
     }
 }
 
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
     console.log(`✅ Ready! Logged in as ${readyClient.user.tag}`);
+
+    try {
+        await getUmaNames();
+        console.log('🥕 Uma names list pre-loaded successfully.');
+    } catch (err) {
+        console.warn('⚠️ Warning: Could not pre-load Uma name list on startup:', err.message);
+    }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
