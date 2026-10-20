@@ -2,6 +2,7 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getUmaNames, assignOshiRole } = require('../../utils/oshiHelper');
 
 module.exports = {
+    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('oshi')
         .setDescription('Pick or change your Oshi Umamusume.')
