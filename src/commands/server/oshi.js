@@ -14,16 +14,30 @@ module.exports = {
         ),
 
     async autocomplete(interaction) {
-        const focusedValue = interaction.options.getFocused().toLowerCase();
-        const choices = await getUmaNames();
+        try {
+            const focusedValue = interaction.options.getFocused().toLowerCase();
+            const choices = await getUmaNames();
 
-        const filtered = choices
-            .filter(choice => choice.toLowerCase().includes(focusedValue))
-            .slice(0, 25);
+            const filtered = choices
+                .filter(choice => 
+                    typeof choice === 'string' && 
+                    choice.trim().length > 0 && 
+                    choice.toLowerCase().includes(focusedValue)
+                )
+                .slice(0, 25)
+                .map(choice => {
+                    const trimmed = choice.trim();
+                    const safeString = trimmed.length > 100 ? trimmed.substring(0, 97) + '...' : trimmed;
+                    return { name: safeString, value: safeString };
+                });
 
-        await interaction.respond(
-            filtered.map(choice => ({ name: choice, value: choice }))
-        );
+            await interaction.respond(filtered);
+        } catch (error) {
+            console.error('❌ Autocomplete execution error:', error);
+            try {
+                await interaction.respond([]).catch(() => {});
+            } catch {}
+        }
     },
 
     async execute(interaction) {
