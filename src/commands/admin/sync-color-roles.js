@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
-const UMA_JSON_PATH = await fetch('https://curren.channel/data/uma/uma.json');
+const UMA_JSON_URL = 'https://curren.channel/data/uma/uma.json';
 
 module.exports = {
     guildOnly: true,
@@ -27,7 +27,8 @@ module.exports = {
 
         let umaList;
         try {
-            umaList = JSON.parse(fs.readFileSync(UMA_JSON_PATH, 'utf8'));
+            umaObject = await fetch(UMA_JSON_URL);
+            umaList = umaObject.json();
         } catch (err) {
             return interaction.editReply('❌ Could not read file');
         }
