@@ -1,8 +1,6 @@
-const fs = require('node:fs');
-const path = require('node:path');
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
-const UMA_JSON_URL = 'https://curren.channel/data/uma/uma.json';
+const UMA_DATA_URL = 'https://curren.channel/data/uma/uma.json';
 
 module.exports = {
     guildOnly: true,
@@ -27,10 +25,14 @@ module.exports = {
 
         let umaList;
         try {
-            umaObject = await fetch(UMA_JSON_URL);
-            umaList = umaObject.json();
+            const res = await fetch(UMA_DATA_URL);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            umaList = await res.json();
         } catch (err) {
-            return interaction.editReply('❌ Could not read file');
+            console.error('Failed to fetch uma.json:', err);
+            return interaction.editReply(`❌ Failed to fetch \`${UMA_DATA_URL}\` (${err.message}).`);
         }
 
         await interaction.guild.roles.fetch();
@@ -39,11 +41,17 @@ module.exports = {
         let skippedCount = 0;
         let missingRoleCount = 0;
 
-        await interaction.editReply(`🎨 Starting role color sync for **${umaList.length}** Umamusume... This may take 1–2 minutes due to Discord rate limits.`);
+        await interaction.editReply(
+            `🎨 Starting role color sync for **${umaList.length}** Umamusume from \`curren.channel\`... This may take 1–2 minutes due to Discord rate limits.`
+        );
 
         for (const uma of umaList) {
-            const targetHex = uma[paletteKey] || uma.color_main;
+            let targetHex = uma[paletteKey] || uma.color_main;
             if (!targetHex) continue;
+
+            if (targetHex.toUpperCase() === '#000000') {
+                targetHex = '#010101';
+            }
 
             const role = interaction.guild.roles.cache.find(
                 r => !r.managed && r.name.toLowerCase() === uma.name.toLowerCase()
