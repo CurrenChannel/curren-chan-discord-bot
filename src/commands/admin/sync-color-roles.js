@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
-const UMA_JSON_PATH = fetch('https://curren.channel/data/uma/uma.json');
+const UMA_JSON_PATH = await fetch('https://curren.channel/data/uma/uma.json');
 
 module.exports = {
     guildOnly: true,
