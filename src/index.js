@@ -2,7 +2,8 @@ require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, MessageFlags, PermissionsBitField } = require('discord.js');
-const { getUmaNames, assignOshiRole } = require('./utils/oshiHelper');
+const { getUmaNames, assignOshiRole } = require('./utils/oshiHelper.js');
+const { getGameData } = require('./utils/gamedata.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -35,6 +36,13 @@ client.once(Events.ClientReady, async (readyClient) => {
         console.log(`🥕 Pre-loaded ${names.length} Umamusume names into cache.`);
     } catch (err) {
         console.error('❌ Failed to pre-load Uma names on startup:', err);
+    }
+
+    try {
+        const data = await getGameData();
+        console.log(`📚 Pre-loaded ${data.skills.length} skills, ${data.characters.length} playable Umas, and ${data.cards.length} support cards!`);
+    } catch (err) {
+        console.error('❌ Failed to pre-load game data:', err);
     }
 });
 
