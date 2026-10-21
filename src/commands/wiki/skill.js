@@ -1,8 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+// commands/utility/skill.js
+const {
+    SlashCommandBuilder,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MessageFlags,
+} = require('discord.js');
 const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gamedata.js');
 
 module.exports = {
-    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('skill')
         .setDescription('Look up an Umamusume skill, its mechanics, and where to obtain it')
@@ -66,77 +73,95 @@ module.exports = {
         }
 
         if (!skill) {
-            return interaction.editReply(`❌ Could not find any skill matching **"${query}"**.`);
+            const errText = new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${query}"**.`);
+            return interaction.editReply({
+                components: [errText],
+                flags: MessageFlags.IsComponentsV2,
+            });
         }
 
-        const embedColor = skill.rarity === 2 ? '#F5C542' : skill.rarity >= 3 ? '#FF77B7' : '#A8B5C2';
-        const embed = new EmbedBuilder()
-            .setTitle(formatSkillName(skill))
-            .setColor(embedColor)
-            .setDescription(
-                `${skill.desc_en ? `**EN:** ${skill.desc_en}\n` : ''}` +
-                `${skill.desc_jp ? `**JP:** ${skill.desc_jp}` : ''}`
+        const accentHex = skill.rarity === 2 ? 0xF5C542 : skill.rarity >= 3 ? 0xFF77B7 : 0xA8B5C2;
+        const container = new ContainerBuilder().setAccentColor(accentHex);
+
+        const rarityText = RARITY_LABELS[skill.rarity] || `Tier ${skill.rarity}`;
+        const spText = skill.sp_cost ? `${skill.sp_cost} SP` : 'Innate / Unique';
+        const statusText = skill.released_gl ? '🌐 Global' : '🇯🇵 JP Only';
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# ${formatSkillName(skill)}\n` +
+                `**Rarity:** ${rarityText}  •  **Cost:** ${spText}  •  **Server:** ${statusText}\n\n` +
+                `${skill.desc_en ? `> ${skill.desc_en}\n` : ''}` +
+                `${skill.desc_jp ? `> *${skill.desc_jp}*` : ''}`
             )
-            .addFields(
-                { name: 'Rarity', value: RARITY_LABELS[skill.rarity] || `Tier ${skill.rarity}`, inline: true },
-                { name: 'SP Cost', value: skill.sp_cost ? `${skill.sp_cost} SP` : 'Innate / Unique', inline: true },
-                { name: 'Server Status', value: skill.released_gl ? '🌐 Released on Global' : '🇯🇵 JP Only', inline: true }
+        );
+
+        const effectList = skill.effects || [];
+        effectList.forEach((effect, idx) => {
+            container.addSeparatorComponents(
+                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
             );
 
-        const effectList = skill.effects;
-
-        const triggerBlock = (effectList || []).map((effect, idx) => {
             const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
-            const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? ` (CD: ${effect.cooldown}s)` : '';
+            const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? `${effect.cooldown}s CD` : '';
 
-
-            if (effectDuration) {
-                embed.addFields({ name: '⏱️ Duration', value: `${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') });
-            }
-            
-            const activationCondition = effect.condition.replace(/&/g, '\n&');
-
-            if (activationCondition) {
-                embed.addFields({ name: '📋 Conditions', value: activationCondition });
-            }
-
+            const activationCondition = effect.condition
+                ? `\`\`\`\n${effect.condition.replace(/&/g, '\n& ').replace(/@/g, '\n@ ')}\n\`\`\``
+                : '`None (Always Active)`';
 
             const abilitiesList = (effect.abilities || []).map(formatAbility);
+            const effectText = abilitiesList.length > 0
+                ? abilitiesList.map((ability, i) => `• **Effect ${i + 1}:** ${ability}`).join('\n')
+                : 'N/A';
 
-            const effectText = (abilitiesList || []).map((ability, idx) => {
-                    return(`**Effect ${idx + 1}:**${ability}\n\n`);
-            });
-
-            return (`## Trigger ${idx}\n` +
-                `### ⏱️ Duration\n` +
-                (effectDuration) ? (`${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') + "\n") : "N/A\n" +
-                `### 📋 Conditions\n` +
-                (activationCondition) ? `${activationCondition}\n` : "N/A\n" +
-                `### ✨ Effects\n` +
-                (effectText) ? effectText : "N/A"
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `## Trigger ${idx + 1}\n` +
+                    `### ⏱️ Duration\n` +
+                    `${effectDuration}${effectCooldown ? ` | ${effectCooldown}` : ''}\n` +
+                    `### 📋 Conditions\n` +
+                    `${activationCondition}\n` +
+                    `### ✨ Effects\n` +
+                    `${effectText}`
+                )
             );
-        }).join('\n\n');
-
-        if (triggerBlock) {
-            embed.addFields({ name: '', value: triggerBlock });
-        }
+        });
 
         const umaSources = skillToUmas.get(skill.id) || [];
-        if (umaSources.length > 0) {
-            const shownUmas = umaSources.slice(0, 8).join('\n');
-            const extra = umaSources.length > 8 ? `\n*...and ${umaSources.length - 8} more*` : '';
-            embed.addFields({ name: `🥕 Playable Umas (${umaSources.length})`, value: (shownUmas + extra).slice(0, 1024) });
-        }
-
         const cardSources = skillToCards.get(skill.id) || [];
-        if (cardSources.length > 0) {
-            const shownCards = cardSources.slice(0, 8).join('\n');
-            const extra = cardSources.length > 8 ? `\n*...and ${cardSources.length - 8} more*` : '';
-            embed.addFields({ name: `🃏 Support Cards (${cardSources.length})`, value: (shownCards + extra).slice(0, 1024) });
+
+        if (umaSources.length > 0 || cardSources.length > 0) {
+            container.addSeparatorComponents(
+                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+            );
+
+            const sourceParts = [];
+            if (umaSources.length > 0) {
+                const shownUmas = umaSources.slice(0, 6).join('\n');
+                const extra = umaSources.length > 6 ? `\n*...and ${umaSources.length - 6} more*` : '';
+                sourceParts.push(`### 🥕 Playable Umas (${umaSources.length})\n${shownUmas}${extra}`);
+            }
+            if (cardSources.length > 0) {
+                const shownCards = cardSources.slice(0, 6).join('\n');
+                const extra = cardSources.length > 6 ? `\n*...and ${cardSources.length - 6} more*` : '';
+                sourceParts.push(`### 🃏 Support Cards (${cardSources.length})\n${shownCards}${extra}`);
+            }
+
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(sourceParts.join('\n\n'))
+            );
         }
 
-        embed.setFooter({ text: `Skill ID: ${skill.id} • Grade Value: ${skill.grade_value || 0}` });
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small)
+        );
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`-# Skill ID: ${skill.id} • Grade Value: ${skill.grade_value || 0}`)
+        );
 
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.editReply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
     },
 };
