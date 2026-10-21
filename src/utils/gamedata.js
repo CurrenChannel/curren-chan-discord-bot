@@ -1,7 +1,7 @@
 const UMA_BASE_URL = 'https://curren.channel/data/uma/uma.json';
-const CHARACTERS_URL = 'https://curren.channel/data/uma/characters.json';
-const CARDS_URL = 'https://curren.channel/data/uma/cards.json';
-const SKILLS_URL = 'https://curren.channel/data/uma/skills.json';
+const CHARACTERS_URL = 'https://curren.channel/data/gamedata/characters.json';
+const CARDS_URL = 'https://curren.channel/data/gamedata/cards.json';
+const SKILLS_URL = 'https://curren.channel/data/gamedata/skills.json';
 
 let cache = null;
 let lastFetched = 0;
@@ -152,7 +152,7 @@ function formatAbility(ability) {
     }
 
     const sign = val > 0 && meta.unit !== 'x' ? '+' : '';
-    
+
     return `${meta.name}: **${sign}${val}${meta.unit}**`;
 }
 
