@@ -12,7 +12,7 @@ const RARITY_LABELS = {
     2: '🟡 Rare (Gold)',
     3: '🌈 Unique (1★–2★)',
     4: '🌈 Unique (3★+)',
-    5: '🌈 Unique (Alt)',
+    5: '🌈 Unique (Inherit)',
     6: '🌸 Evolved',
 };
 
@@ -98,11 +98,11 @@ async function getGameData() {
 
         for (const sid of card.skills?.hints || []) {
             if (!skillToCards.has(sid)) skillToCards.set(sid, []);
-            skillToCards.get(sid).push(`${flag} **${displayName}** *(${card.rarity}${card.type} - Hint)*`);
+            skillToCards.get(sid).push(`${flag} **${displayName}** *(${card.rarity} ${card.type} - Hint)*`);
         }
         for (const sid of card.skills?.events || []) {
             if (!skillToCards.has(sid)) skillToCards.set(sid, []);
-            skillToCards.get(sid).push(`${flag} **${displayName}** *(${card.rarity}${card.type} - Event)*`);
+            skillToCards.get(sid).push(`${flag} **${displayName}** *(${card.rarity} ${card.type} - Event)*`);
         }
     }
 
@@ -123,13 +123,13 @@ async function getGameData() {
 function formatUmaDisplayName(chara) {
     const name = chara.chara_name_en || chara.chara_name_jp || `Chara #${chara.chara_id}`;
     const title = chara.title_en || chara.title_jp || '';
-    return title ? `${title}${name}` : name;
+    return title ? `${title} ${name}` : name;
 }
 
 function formatCardDisplayName(card) {
     const name = card.chara_name_en || card.chara_name_jp || `Card #${card.id}`;
     const title = card.title_en || card.title_jp || '';
-    return title ? `${title}${name}` : name;
+    return title ? `${title} ${name}` : name;
 }
 
 function formatSkillName(skill) {

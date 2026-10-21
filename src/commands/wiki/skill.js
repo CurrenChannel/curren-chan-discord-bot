@@ -84,11 +84,11 @@ module.exports = {
             );
 
         const effectsText = (skill.effects || []).map((eff, idx) => {
-            const abilitiesList = (eff.abilities || []).map(formatAbility).join(' | ') || 'Special Effect';
+            const abilitiesList = (eff.abilities || []).map(formatAbility) || 'Special Effect';
             const durText = eff.duration > 0 ? `${eff.duration}s` : 'Instant / Passive';
             const cdText = eff.cooldown > 0 && eff.cooldown < 500 ? ` (CD: ${eff.cooldown}s)` : '';
             return (
-                `**Effect ${idx + 1}:**${abilitiesList}\n` +
+                `**Effect ${idx + 1}:**${abilitiesList[idx]}\n` +
                 `• **Duration:** ${durText}${cdText}\n` +
                 `• **Condition:** \`${eff.condition || 'None (Always)'}\``
             );

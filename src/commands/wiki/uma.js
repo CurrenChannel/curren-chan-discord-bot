@@ -98,11 +98,11 @@ module.exports = {
 
         const innateList = (chara.skills?.innate || []).map(sid => `• ${resolveSkill(sid)}`).join('\n') || 'None';
         const awakeningList = (chara.skills?.awakening || [])
-            .map(a => `• **Lv.${a.awakening_lv}:**${resolveSkill(a.skill_id)}`)
+            .map(a => `• **Lv.${a.awakening_lv}:** ${resolveSkill(a.skill_id)}`)
             .join('\n') || 'None';
 
         const embed = new EmbedBuilder()
-            .setTitle(`${'⭐'.repeat(chara.default_rarity)}${formatUmaDisplayName(chara)}`)
+            .setTitle(`${'⭐'.repeat(chara.default_rarity)} ${formatUmaDisplayName(chara)}`)
             .setColor(embedColor)
             .setDescription(
                 `${chara.full_name_jp ? `**JP:** ${chara.full_name_jp}\n` : ''}` +
