@@ -83,7 +83,7 @@ module.exports = {
                 { name: 'Server Status', value: skill.released_gl ? '🌐 Released on Global' : '🇯🇵 JP Only', inline: true }
             );
 
-        const effectList = skill.effect;
+        const effectList = skill.effects;
 
         const triggerBlock = (effectList || []).map((effect, idx) => {
             const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
