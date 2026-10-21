@@ -83,31 +83,42 @@ module.exports = {
                 { name: 'Server Status', value: skill.released_gl ? '🌐 Released on Global' : '🇯🇵 JP Only', inline: true }
             );
 
-        const effect = skill.effect;
+        const effectList = skill.effect;
 
-        const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
-        const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? ` (CD: ${effect.cooldown}s)` : '';
-
-
-        if (effectDuration) {
-            embed.addFields({ name: '⏱️ Duration', value: `${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') });
-        }
-        
-        const activationCondition = effect.condition.replace(/&/g, '\n&');
-
-        if (activationCondition) {
-            embed.addFields({ name: '📋 Conditions', value: activationCondition });
-        }
+        const triggerBlock = (effectList || []).map((effect, idx) => {
+            const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
+            const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? ` (CD: ${effect.cooldown}s)` : '';
 
 
-        const abilitiesList = (effect.abilities || []).map(formatAbility);
+            if (effectDuration) {
+                embed.addFields({ name: '⏱️ Duration', value: `${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') });
+            }
+            
+            const activationCondition = effect.condition.replace(/&/g, '\n&');
 
-        const effectText = (abilitiesList || []).map((ability, idx) => {
-                return(`**Effect ${idx + 1}:**${ability}\n\n`);
-        });
+            if (activationCondition) {
+                embed.addFields({ name: '📋 Conditions', value: activationCondition });
+            }
 
-        if (effectText) {
-            embed.addFields({ name: '✨ Effects', value: effectsText.slice(0, 1024) });
+
+            const abilitiesList = (effect.abilities || []).map(formatAbility);
+
+            const effectText = (abilitiesList || []).map((ability, idx) => {
+                    return(`**Effect ${idx + 1}:**${ability}\n\n`);
+            });
+
+            return (`## Trigger ${idx}\n` +
+                `### ⏱️ Duration\n` +
+                (effectDuration) ? (`${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') + "\n") : "N/A\n" +
+                `### 📋 Conditions\n` +
+                (activationCondition) ? `${activationCondition}\n` : "N/A\n" +
+                `### ✨ Effects\n` +
+                (effectText) ? effectText : "N/A"
+            );
+        }).join('\n\n');
+
+        if (triggerBlock) {
+            embed.addFields({ name: '', value: triggerBlock });
         }
 
         const umaSources = skillToUmas.get(skill.id) || [];
