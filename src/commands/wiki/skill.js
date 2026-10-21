@@ -83,19 +83,31 @@ module.exports = {
                 { name: 'Server Status', value: skill.released_gl ? '🌐 Released on Global' : '🇯🇵 JP Only', inline: true }
             );
 
-        const effectsText = (skill.effects || []).map((eff, idx) => {
-            const abilitiesList = (eff.abilities || []).map(formatAbility) || 'Special Effect';
-            const durText = eff.duration > 0 ? `${eff.duration}s` : 'Instant / Passive';
-            const cdText = eff.cooldown > 0 && eff.cooldown < 500 ? ` (CD: ${eff.cooldown}s)` : '';
-            return (
-                `**Effect ${idx + 1}:**${abilitiesList[idx]}\n` +
-                `• **Duration:** ${durText}${cdText}\n` +
-                `• **Condition:** \`${eff.condition || 'None (Always)'}\``
-            );
-        }).join('\n\n');
+        const effect = skill.effect;
 
-        if (effectsText) {
-            embed.addFields({ name: '⚙️ Mechanics & Conditions', value: effectsText.slice(0, 1024) });
+        const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
+        const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? ` (CD: ${effect.cooldown}s)` : '';
+
+
+        if (effectDuration) {
+            embed.addFields({ name: '⏱️ Duration', value: `${effectDuration}s` + ((effectCooldown) ? ` | ${effectCooldown}` : '') });
+        }
+        
+        const activationCondition = effect.condition.replace(/&/g, '\n&');
+
+        if (activationCondition) {
+            embed.addFields({ name: '📋 Conditions', value: activationCondition });
+        }
+
+
+        const abilitiesList = (effect.abilities || []).map(formatAbility);
+
+        const effectText = (abilitiesList || []).map((ability, idx) => {
+                return(`**Effect ${idx + 1}:**${ability}\n\n`);
+        });
+
+        if (effectText) {
+            embed.addFields({ name: '✨ Effects', value: effectsText.slice(0, 1024) });
         }
 
         const umaSources = skillToUmas.get(skill.id) || [];
