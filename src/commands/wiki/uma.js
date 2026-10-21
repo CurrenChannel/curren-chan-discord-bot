@@ -9,6 +9,7 @@ const RUNNING_STYLE_NAMES = {
 };
 
 module.exports = {
+    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('uma')
         .setDescription('Look up a playable Umamusume outfit, stat bonuses, and skill kit')

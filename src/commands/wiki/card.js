@@ -13,6 +13,7 @@ const TYPE_EMOJI = {
 };
 
 module.exports = {
+    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('card')
         .setDescription('Look up a Support Card and its training hint skills')

@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gamedata.js');
 
 module.exports = {
+    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('skill')
         .setDescription('Look up an Umamusume skill, its mechanics, and where to obtain it')
