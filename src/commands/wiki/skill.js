@@ -87,48 +87,54 @@ module.exports = {
         const spText = skill.sp_cost ? `${skill.sp_cost} SP` : 'Innate / Unique';
         const statusText = skill.released_gl ? '🌐 Global' : '🇯🇵 JP Only';
 
+        const descLines = [
+            skill.desc_en ? `> ${skill.desc_en}` : null,
+            skill.desc_jp ? `> -#*${skill.desc_jp}*` : null, // -# makes the JP subtitle smaller & muted!
+        ].filter(Boolean).join('\n');
+
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `# ${formatSkillName(skill)}\n` +
-                `**Rarity:** ${rarityText}  •  **Cost:** ${spText}  •  **Server:** ${statusText}\n\n` +
-                `${skill.desc_en ? `> ${skill.desc_en}\n` : ''}` +
-                `${skill.desc_jp ? `> *${skill.desc_jp}*` : ''}`
+                `### ${formatSkillName(skill)}\n` +
+                `-# ${rarityText}  •  **Cost:** ${spText}  •${statusText}\n` +
+                (descLines ? `${descLines}` : '')
             )
         );
 
         const effectList = skill.effects || [];
-        effectList.forEach((effect, idx) => {
+        if (effectList.length > 0) {
             container.addSeparatorComponents(
                 new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
             );
 
-            const effectDuration = effect.duration > 0 ? `${effect.duration}s` : 'Instant / Passive';
-            const effectCooldown = effect.cooldown > 0 && effect.cooldown < 500 ? `${effect.cooldown}s CD` : '';
+            const triggersFormatted = effectList.map((effect, idx) => {
+                const triggerLabel = effectList.length > 1 ? `**⚙️ Trigger ${idx + 1}**  •  ` : '';
+                const durText = effect.duration > 0 ? `\`${effect.duration}s\`` : '`Instant / Passive`';
+                const cdText = effect.cooldown > 0 && effect.cooldown < 500 ? ` *(${effect.cooldown}s CD)*` : '';
 
-            const activationCondition = effect.condition
-                ? `\`\`\`\n${effect.condition.replace(/&/g, '\n& ').replace(/@/g, '\n@ ')}\n\`\`\``
-                : '`None (Always Active)`';
+                const rawCond = (effect.condition || '').trim();
+                const condBlock = rawCond
+                    ? `\`\`\`\n${rawCond.replace(/&/g, '\n& ').replace(/@/g, '\n@ ')}\n\`\`\``
+                    : '`None (Always Active)`';
 
-            const abilitiesList = (effect.abilities || []).map(formatAbility);
-            const effectText = abilitiesList.length > 0
-                ? abilitiesList.map((ability, i) => `• **Effect ${i + 1}:** ${ability}`).join('\n')
-                : 'N/A';
+                const abilitiesList = (effect.abilities || []).map(formatAbility);
+                const effectsInline = abilitiesList.length > 0
+                    ? abilitiesList.join('  •  ')
+                    : 'N/A';
+
+                return (
+                    `${triggerLabel}⏱️ **Duration:** ${durText}${cdText}\n` +
+                    `✨ **Effects:** ${effectsInline}\n` +
+                    `📋 **Conditions:**\n${condBlock}`
+                );
+            }).join('\n\n');
 
             container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `## Trigger ${idx + 1}\n` +
-                    `### ⏱️ Duration\n` +
-                    `${effectDuration}${effectCooldown ? ` | ${effectCooldown}` : ''}\n` +
-                    `### 📋 Conditions\n` +
-                    `${activationCondition}\n` +
-                    `### ✨ Effects\n` +
-                    `${effectText}`
-                )
+                new TextDisplayBuilder().setContent(triggersFormatted)
             );
-        });
+        }
 
-        const umaSources = skillToUmas.get(skill.id) || [];
-        const cardSources = skillToCards.get(skill.id) || [];
+        const umaSources = skillToUmas.get(Number(skill.id)) || [];
+        const cardSources = skillToCards.get(Number(skill.id)) || [];
 
         if (umaSources.length > 0 || cardSources.length > 0) {
             container.addSeparatorComponents(
@@ -137,14 +143,14 @@ module.exports = {
 
             const sourceParts = [];
             if (umaSources.length > 0) {
-                const shownUmas = umaSources.slice(0, 6).join('\n');
-                const extra = umaSources.length > 6 ? `\n*...and ${umaSources.length - 6} more*` : '';
-                sourceParts.push(`### 🥕 Playable Umas (${umaSources.length})\n${shownUmas}${extra}`);
+                const shownUmas = umaSources.slice(0, 5).join('\n');
+                const extra = umaSources.length > 5 ? `\n-# *...and ${umaSources.length - 5} more*` : '';
+                sourceParts.push(`**🥕 Playable Umas (${umaSources.length})**\n${shownUmas}${extra}`);
             }
             if (cardSources.length > 0) {
-                const shownCards = cardSources.slice(0, 6).join('\n');
-                const extra = cardSources.length > 6 ? `\n*...and ${cardSources.length - 6} more*` : '';
-                sourceParts.push(`### 🃏 Support Cards (${cardSources.length})\n${shownCards}${extra}`);
+                const shownCards = cardSources.slice(0, 5).join('\n');
+                const extra = cardSources.length > 5 ? `\n-# *...and ${cardSources.length - 5} more*` : '';
+                sourceParts.push(`**🃏 Support Cards (${cardSources.length})**\n${shownCards}${extra}`);
             }
 
             container.addTextDisplayComponents(
@@ -152,9 +158,6 @@ module.exports = {
             );
         }
 
-        container.addSeparatorComponents(
-            new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small)
-        );
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(`-# Skill ID: ${skill.id} • Grade Value: ${skill.grade_value || 0}`)
         );
