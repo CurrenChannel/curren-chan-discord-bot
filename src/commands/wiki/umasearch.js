@@ -183,5 +183,5 @@ function createUmaSearchCommand(commandName, description) {
     };
 }
 
-module.exports = createUmaSearchCommand('umasearch', 'Search for Playable Umas by skill, star rarity, or server');
+module.exports = createUmaSearchCommand('umasearch', 'Search for Umas by filters');
 module.exports.createUmaSearchCommand = createUmaSearchCommand;

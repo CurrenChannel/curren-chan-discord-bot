@@ -217,5 +217,5 @@ function createCardSearchCommand(commandName, description) {
     };
 }
 
-module.exports = createCardSearchCommand('cardsearch', 'Search for Support Cards by skill, rarity, type, or server');
+module.exports = createCardSearchCommand('cardsearch', 'Search for Support Cards by filters');
 module.exports.createCardSearchCommand = createCardSearchCommand;
