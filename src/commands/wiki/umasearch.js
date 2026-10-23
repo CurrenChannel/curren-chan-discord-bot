@@ -6,7 +6,7 @@ const {
     SeparatorSpacingSize,
     MessageFlags,
 } = require('discord.js');
-const { getGameData, formatSkillName, formatUmaDisplayName } = require('../../utils/gameData');
+const { getGameData, formatSkillName, formatUmaDisplayName } = require('../../utils/gamedata.js');
 
 function createUmaSearchCommand(commandName, description) {
     return {

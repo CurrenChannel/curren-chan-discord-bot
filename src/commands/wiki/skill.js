@@ -7,7 +7,7 @@ const {
     SeparatorSpacingSize,
     MessageFlags,
 } = require('discord.js');
-const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gameData');
+const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gamedata.js');
 
 module.exports = {
     guildOnly: true,

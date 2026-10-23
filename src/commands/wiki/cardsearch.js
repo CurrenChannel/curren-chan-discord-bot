@@ -6,7 +6,7 @@ const {
     SeparatorSpacingSize,
     MessageFlags,
 } = require('discord.js');
-const { getGameData, formatSkillName, formatCardDisplayName } = require('../../utils/gameData');
+const { getGameData, formatSkillName, formatCardDisplayName } = require('../../utils/gamedata.js');
 
 function createCardSearchCommand(commandName, description) {
     return {
