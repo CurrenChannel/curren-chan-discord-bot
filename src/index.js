@@ -134,6 +134,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 }
             }
         }
+
+        //Search pagination
+        if (interaction.customId.startsWith('us_page:')) {
+            const { handleUmaSearchButton } = require('../commands/utility/umasearch');
+            return await handleUmaSearchButton(interaction);
+        }
+
+        if (interaction.customId.startsWith('cs_page:')) {
+            const { handleCardSearchButton } = require('../commands/utility/cardsearch');
+            return await handleCardSearchButton(interaction);
+        }
         return;
     }
 
