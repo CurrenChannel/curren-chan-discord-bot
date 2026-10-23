@@ -137,12 +137,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         //Search pagination
         if (interaction.customId.startsWith('us_page:')) {
-            const { handleUmaSearchButton } = require('../commands/wiki/umasearch');
+            const { handleUmaSearchButton } = require('./commands/wiki/umasearch');
             return await handleUmaSearchButton(interaction);
         }
 
         if (interaction.customId.startsWith('cs_page:')) {
-            const { handleCardSearchButton } = require('../commands/wiki/cardsearch');
+            const { handleCardSearchButton } = require('./commands/wiki/cardsearch');
             return await handleCardSearchButton(interaction);
         }
         return;
