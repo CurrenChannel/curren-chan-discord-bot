@@ -1,3 +1,4 @@
+// commands/utility/cardsearch.js
 const {
     SlashCommandBuilder,
     ContainerBuilder,
@@ -7,10 +8,125 @@ const {
     MessageFlags,
 } = require('discord.js');
 const { getGameData, formatSkillName, formatCardDisplayName } = require('../../utils/gamedata.js');
+const { buildPaginationRow } = require('../../utils/pagination');
+
+const ITEMS_PER_PAGE = 15;
+
+async function buildCardSearchPayload({ skillQuery, rarityFilter, typeFilter, serverFilter = 'all', page = 0 }) {
+    const { skills, skillById, cards } = await getGameData();
+
+    let skill = null;
+    if (skillQuery) {
+        skill = skillById.get(Number(skillQuery));
+        if (!skill) {
+            const qLower = skillQuery.toLowerCase();
+            skill = skills.find(
+                s => (s.name_en && s.name_en.toLowerCase() === qLower) ||
+                     (s.name_jp && s.name_jp.toLowerCase() === qLower)
+            ) || skills.find(
+                s => (s.name_en && s.name_en.toLowerCase().includes(qLower)) ||
+                     (s.name_jp && s.name_jp.toLowerCase().includes(qLower))
+            );
+        }
+        if (!skill) {
+            return {
+                components: [new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${skillQuery}"**.`)],
+                flags: MessageFlags.IsComponentsV2,
+            };
+        }
+    }
+
+    const targetId = skill ? Number(skill.id) : null;
+    const hintCards = [];
+    const eventCards = [];
+    const generalCards = [];
+
+    for (const card of cards) {
+        if (serverFilter === 'gl' && !card.released_gl) continue;
+        if (serverFilter === 'jp' && card.released_gl) continue;
+        if (rarityFilter && card.rarity !== rarityFilter) continue;
+
+        if (typeFilter) {
+            if (typeFilter === 'Friend' && !['Friend', 'Group'].includes(card.type)) continue;
+            else if (typeFilter !== 'Friend' && card.type !== typeFilter) continue;
+        }
+
+        const flag = card.released_gl ? '🌐' : '🇯🇵';
+        const name = formatCardDisplayName(card);
+        const badge = `*(${card.rarity} ${card.type})*`;
+
+        if (targetId) {
+            const hints = (card.skills?.hints || []).map(Number);
+            const events = (card.skills?.events || []).map(Number);
+
+            if (hints.includes(targetId)) {
+                hintCards.push(`${flag} 💡 **${name}** ${badge} — *Hint*`);
+            }
+            if (events.includes(targetId)) {
+                eventCards.push(`${flag} ✨ **${name}** ${badge} — *Event*`);
+            }
+        } else {
+            generalCards.push(`${flag} **${name}** ${badge}`);
+        }
+    }
+
+    const allResults = targetId ? [...hintCards, ...eventCards] : generalCards;
+    const totalPages = Math.max(1, Math.ceil(allResults.length / ITEMS_PER_PAGE));
+    const safePage = Math.max(0, Math.min(page, totalPages - 1));
+    const pageItems = allResults.slice(safePage * ITEMS_PER_PAGE, (safePage + 1) * ITEMS_PER_PAGE);
+
+    const container = new ContainerBuilder().setAccentColor(0x5865F2);
+
+    const filterSummary = [
+        rarityFilter ? `Rarity: ${rarityFilter}` : 'All Rarities',
+        typeFilter ? `Type: ${typeFilter}` : 'All Types',
+        serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
+    ].join('  •  ');
+
+    const titleText = skill ? `### 🃏 Card Search: ${formatSkillName(skill)}` : `### 🃏 Support Card Search`;
+    const countBreakdown = targetId
+        ? `**Found:** ${allResults.length} (${hintCards.length} Hints, ${eventCards.length} Events)`
+        : `**Found:** ${allResults.length} Card(s)`;
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `${titleText}\n` +
+            `-# ${countBreakdown}  •  **Filters:** ${filterSummary}`
+        )
+    );
+
+    container.addSeparatorComponents(
+        new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    );
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            pageItems.length > 0 ? pageItems.join('\n') : '*No Support Cards found matching these filters.*'
+        )
+    );
+
+    const navRow = buildPaginationRow('cs_page', safePage, totalPages, [
+        targetId || '',
+        rarityFilter || '',
+        typeFilter || '',
+        serverFilter || 'all',
+    ]);
+
+    if (navRow) {
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
+        container.addActionRowComponents(navRow);
+    }
+
+    return {
+        components: [container],
+        flags: MessageFlags.IsComponentsV2,
+    };
+}
 
 function createCardSearchCommand(commandName, description) {
     return {
-        guildOnly: true,
         data: new SlashCommandBuilder()
             .setName(commandName)
             .setDescription(description)
@@ -80,10 +196,7 @@ function createCardSearchCommand(commandName, description) {
                 matches.slice(0, 25).map(s => {
                     const count = (skillToCards.get(Number(s.id)) || []).length;
                     const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
-                    return {
-                        name: `${label} [${count} Cards]`.slice(0, 100),
-                        value: String(s.id),
-                    };
+                    return { name: `${label} [${count} Cards]`.slice(0, 100), value: String(s.id) };
                 })
             );
         },
@@ -94,7 +207,6 @@ function createCardSearchCommand(commandName, description) {
             const rarityFilter = interaction.options.getString('rarity');
             const typeFilter = interaction.options.getString('type');
             const serverFilter = interaction.options.getString('server') || 'all';
-            const { skills, skillById, cards } = await getGameData();
 
             if (!skillQuery && !rarityFilter && !typeFilter && serverFilter === 'all') {
                 return interaction.editReply({
@@ -107,116 +219,31 @@ function createCardSearchCommand(commandName, description) {
                 });
             }
 
-            let skill = null;
-            if (skillQuery) {
-                skill = skillById.get(Number(skillQuery));
-                if (!skill) {
-                    const qLower = skillQuery.toLowerCase();
-                    skill = skills.find(
-                        s => (s.name_en && s.name_en.toLowerCase() === qLower) ||
-                             (s.name_jp && s.name_jp.toLowerCase() === qLower)
-                    ) || skills.find(
-                        s => (s.name_en && s.name_en.toLowerCase().includes(qLower)) ||
-                             (s.name_jp && s.name_jp.toLowerCase().includes(qLower))
-                    );
-                }
-
-                if (!skill) {
-                    return interaction.editReply({
-                        components: [new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${skillQuery}"**.`)],
-                        flags: MessageFlags.IsComponentsV2,
-                    });
-                }
-            }
-
-            const targetId = skill ? Number(skill.id) : null;
-            const hintCards = [];
-            const eventCards = [];
-            const generalCards = [];
-
-            for (const card of cards) {
-                if (serverFilter === 'gl' && !card.released_gl) continue;
-                if (serverFilter === 'jp' && card.released_gl) continue;
-
-                if (rarityFilter && card.rarity !== rarityFilter) continue;
-
-                if (typeFilter) {
-                    if (typeFilter === 'Friend' && !['Friend', 'Group'].includes(card.type)) continue;
-                    else if (typeFilter !== 'Friend' && card.type !== typeFilter) continue;
-                }
-
-                const flag = card.released_gl ? '🌐' : '🇯🇵';
-                const name = formatCardDisplayName(card);
-                const badge = `*(${card.rarity} ${card.type})*`;
-
-                if (targetId) {
-                    const hints = (card.skills?.hints || []).map(Number);
-                    const events = (card.skills?.events || []).map(Number);
-
-                    if (hints.includes(targetId)) {
-                        hintCards.push(`${flag} **${name}** ${badge}`);
-                    }
-                    if (events.includes(targetId)) {
-                        eventCards.push(`${flag} **${name}** ${badge}`);
-                    }
-                } else {
-                    generalCards.push(`${flag} **${name}** ${badge}`);
-                }
-            }
-
-            const totalFound = targetId ? (hintCards.length + eventCards.length) : generalCards.length;
-            const container = new ContainerBuilder().setAccentColor(0x5865F2);
-
-            const filterSummary = [
-                rarityFilter ? `Rarity: ${rarityFilter}` : 'All Rarities',
-                typeFilter ? `Type: ${typeFilter}` : 'All Types',
-                serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
-            ].join('  •  ');
-
-            const titleText = skill ? `### 🃏 Card Search: ${formatSkillName(skill)}` : `### 🃏 Support Card Search`;
-
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `${titleText}\n` +
-                    `-# **Found:** ${totalFound} result(s)  •  **Filters:** ${filterSummary}`
-                )
-            );
-
-            container.addSeparatorComponents(
-                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            const sections = [];
-            if (targetId) {
-                if (hintCards.length > 0) {
-                    const shown = hintCards.slice(0, 20).join('\n');
-                    const extra = hintCards.length > 20 ? `\n-# *...and ${hintCards.length - 20} more*` : '';
-                    sections.push(`**💡 Training Hints (${hintCards.length})**\n${shown}${extra}`);
-                }
-                if (eventCards.length > 0) {
-                    const shown = eventCards.slice(0, 20).join('\n');
-                    const extra = eventCards.length > 20 ? `\n-# *...and ${eventCards.length - 20} more*` : '';
-                    sections.push(`**✨ Chain / Card Events (${eventCards.length})**\n${shown}${extra}`);
-                }
-            } else if (generalCards.length > 0) {
-                const shown = generalCards.slice(0, 30).join('\n');
-                const extra = generalCards.length > 30 ? `\n-# *...and ${generalCards.length - 30} more*` : '';
-                sections.push(shown + extra);
-            }
-
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    sections.length > 0 ? sections.join('\n\n') : '*No Support Cards found matching these filters.*'
-                )
-            );
-
-            await interaction.editReply({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2,
+            const payload = await buildCardSearchPayload({
+                skillQuery,
+                rarityFilter,
+                typeFilter,
+                serverFilter,
+                page: 0,
             });
+            await interaction.editReply(payload);
         },
     };
 }
 
-module.exports = createCardSearchCommand('cardsearch', 'Search for Support Cards by filters');
+async function handleCardSearchButton(interaction) {
+    // customId format: cs_page:<page>:<skillId>:<rarity>:<type>:<server>:<dir>
+    const [, pageStr, skillId, rarity, type, server] = interaction.customId.split(':');
+    const payload = await buildCardSearchPayload({
+        skillQuery: skillId || null,
+        rarityFilter: rarity || null,
+        typeFilter: type || null,
+        serverFilter: server || 'all',
+        page: Number(pageStr) || 0,
+    });
+    await interaction.update(payload);
+}
+
+module.exports = createCardSearchCommand('cardsearch', 'Search for Support Cards by skill, rarity, type, or server');
 module.exports.createCardSearchCommand = createCardSearchCommand;
+module.exports.handleCardSearchButton = handleCardSearchButton;

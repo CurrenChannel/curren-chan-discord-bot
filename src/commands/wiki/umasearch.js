@@ -1,3 +1,4 @@
+// commands/utility/umasearch.js
 const {
     SlashCommandBuilder,
     ContainerBuilder,
@@ -7,10 +8,118 @@ const {
     MessageFlags,
 } = require('discord.js');
 const { getGameData, formatSkillName, formatUmaDisplayName } = require('../../utils/gamedata.js');
+const { buildPaginationRow } = require('../../utils/pagination');
+
+const ITEMS_PER_PAGE = 15;
+
+async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 'all', page = 0 }) {
+    const { skills, skillById, characters } = await getGameData();
+
+    let skill = null;
+    if (skillQuery) {
+        skill = skillById.get(Number(skillQuery));
+        if (!skill) {
+            const qLower = skillQuery.toLowerCase();
+            skill = skills.find(
+                s => (s.name_en && s.name_en.toLowerCase() === qLower) ||
+                     (s.name_jp && s.name_jp.toLowerCase() === qLower)
+            ) || skills.find(
+                s => (s.name_en && s.name_en.toLowerCase().includes(qLower)) ||
+                     (s.name_jp && s.name_jp.toLowerCase().includes(qLower))
+            );
+        }
+        if (!skill) {
+            return {
+                components: [new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${skillQuery}"**.`)],
+                flags: MessageFlags.IsComponentsV2,
+            };
+        }
+    }
+
+    const targetId = skill ? Number(skill.id) : null;
+    const results = [];
+
+    for (const u of characters) {
+        if (serverFilter === 'gl' && !u.released_gl) continue;
+        if (serverFilter === 'jp' && u.released_gl) continue;
+
+        const umaRarity = Number(u.rarity || u.default_rarity || 3);
+        if (rarityFilter && umaRarity !== Number(rarityFilter)) continue;
+
+        const flag = u.released_gl ? '🌐' : '🇯🇵';
+        const stars = '⭐'.repeat(umaRarity);
+        const name = formatUmaDisplayName(u);
+
+        if (targetId) {
+            const sources = [];
+            if (Number(u.skills?.unique) === targetId) sources.push('Unique');
+            if ((u.skills?.innate || []).map(Number).includes(targetId)) sources.push('Innate');
+            for (const awk of u.skills?.awakening || []) {
+                if (Number(awk.skill_id) === targetId) sources.push(`Lv.${awk.level}`);
+            }
+            for (const evo of u.skills?.evolved || []) {
+                if (Number(evo.evolved_skill_id) === targetId || Number(evo.base_skill_id) === targetId) {
+                    sources.push('Evolved');
+                }
+            }
+            if (sources.length > 0) {
+                results.push(`${flag} ${stars} **${name}** *(${sources.join(', ')})*`);
+            }
+        } else {
+            results.push(`${flag} ${stars} **${name}**`);
+        }
+    }
+
+    const totalPages = Math.max(1, Math.ceil(results.length / ITEMS_PER_PAGE));
+    const safePage = Math.max(0, Math.min(page, totalPages - 1));
+    const pageItems = results.slice(safePage * ITEMS_PER_PAGE, (safePage + 1) * ITEMS_PER_PAGE);
+
+    const filterBadges = [
+        rarityFilter ? `${rarityFilter}★ Only` : 'All Rarities',
+        serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
+    ].join('  •  ');
+
+    const titleText = skill ? `### 🥕 Uma Search: ${formatSkillName(skill)}` : `### 🥕 Playable Uma Search`;
+
+    const container = new ContainerBuilder().setAccentColor(0xFF77B7);
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `${titleText}\n` +
+            `-# **Found:** ${results.length} Uma(s)  •  **Filters:** ${filterBadges}`
+        )
+    );
+
+    container.addSeparatorComponents(
+        new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    );
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            pageItems.length > 0 ? pageItems.join('\n') : '*No Playable Umas found matching these filters.*'
+        )
+    );
+
+    const navRow = buildPaginationRow('us_page', safePage, totalPages, [
+        targetId || '',
+        rarityFilter || '',
+        serverFilter || 'all',
+    ]);
+
+    if (navRow) {
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
+        container.addActionRowComponents(navRow);
+    }
+
+    return {
+        components: [container],
+        flags: MessageFlags.IsComponentsV2,
+    };
+}
 
 function createUmaSearchCommand(commandName, description) {
     return {
-        guildOnly: true,
         data: new SlashCommandBuilder()
             .setName(commandName)
             .setDescription(description)
@@ -66,10 +175,7 @@ function createUmaSearchCommand(commandName, description) {
                 matches.slice(0, 25).map(s => {
                     const count = (skillToUmas.get(Number(s.id)) || []).length;
                     const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
-                    return {
-                        name: `${label} [${count} Umas]`.slice(0, 100),
-                        value: String(s.id),
-                    };
+                    return { name: `${label} [${count} Umas]`.slice(0, 100), value: String(s.id) };
                 })
             );
         },
@@ -79,7 +185,6 @@ function createUmaSearchCommand(commandName, description) {
             const skillQuery = interaction.options.getString('skill')?.trim();
             const rarityFilter = interaction.options.getInteger('rarity');
             const serverFilter = interaction.options.getString('server') || 'all';
-            const { skills, skillById, umas } = await getGameData();
 
             if (!skillQuery && !rarityFilter && serverFilter === 'all') {
                 return interaction.editReply({
@@ -92,97 +197,29 @@ function createUmaSearchCommand(commandName, description) {
                 });
             }
 
-            let skill = null;
-            if (skillQuery) {
-                skill = skillById.get(Number(skillQuery));
-                if (!skill) {
-                    const qLower = skillQuery.toLowerCase();
-                    skill = skills.find(
-                        s => (s.name_en && s.name_en.toLowerCase() === qLower) ||
-                             (s.name_jp && s.name_jp.toLowerCase() === qLower)
-                    ) || skills.find(
-                        s => (s.name_en && s.name_en.toLowerCase().includes(qLower)) ||
-                             (s.name_jp && s.name_jp.toLowerCase().includes(qLower))
-                    );
-                }
-
-                if (!skill) {
-                    return interaction.editReply({
-                        components: [new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${skillQuery}"**.`)],
-                        flags: MessageFlags.IsComponentsV2,
-                    });
-                }
-            }
-
-            const targetId = skill ? Number(skill.id) : null;
-            const results = [];
-
-            for (const u of umas) {
-                if (serverFilter === 'gl' && !u.released_gl) continue;
-                if (serverFilter === 'jp' && u.released_gl) continue;
-
-                const umaRarity = Number(u.rarity || u.default_rarity || 3);
-                if (rarityFilter && umaRarity !== rarityFilter) continue;
-
-                const flag = u.released_gl ? '🌐' : '🇯🇵';
-                const stars = '⭐'.repeat(umaRarity);
-                const name = formatUmaDisplayName(u);
-
-                if (targetId) {
-                    const sources = [];
-                    if (Number(u.skills?.unique) === targetId) sources.push('Unique');
-                    if ((u.skills?.innate || []).map(Number).includes(targetId)) sources.push('Innate');
-                    for (const awk of u.skills?.awakening || []) {
-                        if (Number(awk.skill_id) === targetId) sources.push(`Lv.${awk.level}`);
-                    }
-                    for (const evo of u.skills?.evolved || []) {
-                        if (Number(evo.evolved_skill_id) === targetId || Number(evo.base_skill_id) === targetId) {
-                            sources.push('Evolved');
-                        }
-                    }
-
-                    if (sources.length > 0) {
-                        results.push(`${flag} ${stars} **${name}** *(${sources.join(', ')})*`);
-                    }
-                } else {
-                    results.push(`${flag} ${stars} **${name}**`);
-                }
-            }
-
-            const filterBadges = [
-                rarityFilter ? `${rarityFilter}★ Only` : 'All Rarities',
-                serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
-            ].join('  •  ');
-
-            const titleText = skill ? `### 🥕 Uma Search: ${formatSkillName(skill)}` : `### 🥕 Playable Uma Search`;
-
-            const container = new ContainerBuilder().setAccentColor(0xFF77B7);
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `${titleText}\n` +
-                    `-# **Found:** ${results.length} Uma(s)  •  **Filters:** ${filterBadges}`
-                )
-            );
-
-            container.addSeparatorComponents(
-                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            const bodyText = results.length > 0
-                ? results.slice(0, 35).join('\n') + (results.length > 35 ? `\n-# *...and ${results.length - 35} more*` : '')
-                : '*No Playable Umas found matching these filters.*';
-
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(bodyText)
-            );
-
-            await interaction.editReply({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2,
+            const payload = await buildUmaSearchPayload({
+                skillQuery,
+                rarityFilter,
+                serverFilter,
+                page: 0,
             });
+            await interaction.editReply(payload);
         },
     };
 }
 
-module.exports = createUmaSearchCommand('umasearch', 'Search for Umas by filters');
+async function handleUmaSearchButton(interaction) {
+    // customId format: us_page:<page>:<skillId>:<rarity>:<server>:<dir>
+    const [, pageStr, skillId, rarity, server] = interaction.customId.split(':');
+    const payload = await buildUmaSearchPayload({
+        skillQuery: skillId || null,
+        rarityFilter: rarity ? Number(rarity) : null,
+        serverFilter: server || 'all',
+        page: Number(pageStr) || 0,
+    });
+    await interaction.update(payload);
+}
+
+module.exports = createUmaSearchCommand('umasearch', 'Search for Playable Umas by skill, star rarity, or server');
 module.exports.createUmaSearchCommand = createUmaSearchCommand;
+module.exports.handleUmaSearchButton = handleUmaSearchButton;
