@@ -10,6 +10,7 @@ const { getGameData, formatSkillName, formatUmaDisplayName } = require('../../ut
 
 function createUmaSearchCommand(commandName, description) {
     return {
+        guildOnly: true,
         data: new SlashCommandBuilder()
             .setName(commandName)
             .setDescription(description)

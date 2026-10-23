@@ -83,7 +83,6 @@ module.exports = {
             return s.name_en ? `**${s.name_en}** *(${s.name_jp})*` : `**${s.name_jp}**`;
         };
 
-        // Format Stat Bonuses
         const sb = chara.stat_bonuses || {};
         const bonusParts = [
             sb.speed ? `⚡ SPD **+${sb.speed}%**` : null,

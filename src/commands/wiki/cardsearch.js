@@ -10,6 +10,7 @@ const { getGameData, formatSkillName, formatCardDisplayName } = require('../../u
 
 function createCardSearchCommand(commandName, description) {
     return {
+        guildOnly: true,
         data: new SlashCommandBuilder()
             .setName(commandName)
             .setDescription(description)
