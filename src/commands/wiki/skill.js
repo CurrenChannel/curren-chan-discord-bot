@@ -7,12 +7,12 @@ const {
     SeparatorSpacingSize,
     MessageFlags,
 } = require('discord.js');
-const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gamedata.js');
+const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gameData');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('skill')
-        .setDescription('Look up an Umamusume skill, its mechanics, and where to obtain it')
+        .setDescription('Look up an Umamusume skill and its exact mechanics')
         .addStringOption(option =>
             option
                 .setName('query')
@@ -25,15 +25,11 @@ module.exports = {
         const focused = interaction.options.getFocused().toLowerCase().trim();
         const { skills } = await getGameData();
 
-        const matches = [];
-        for (const s of skills) {
+        const matches = skills.filter(s => {
             const en = (s.name_en || '').toLowerCase();
             const jp = (s.name_jp || '').toLowerCase();
-
-            if (!focused || en.includes(focused) || jp.includes(focused) || String(s.id) === focused) {
-                matches.push(s);
-            }
-        }
+            return !focused || en.includes(focused) || jp.includes(focused) || String(s.id) === focused;
+        });
 
         matches.sort((a, b) => {
             const aStarts = (a.name_en || '').toLowerCase().startsWith(focused) ? 1 : 0;
@@ -47,10 +43,7 @@ module.exports = {
             matches.slice(0, 25).map(s => {
                 const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
                 const tag = s.released_gl ? '' : ' [JP]';
-                return {
-                    name: `${label}${tag}`.slice(0, 100),
-                    value: String(s.id),
-                };
+                return { name: `${label}${tag}`.slice(0, 100), value: String(s.id) };
             })
         );
     },
@@ -73,9 +66,8 @@ module.exports = {
         }
 
         if (!skill) {
-            const errText = new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${query}"**.`);
             return interaction.editReply({
-                components: [errText],
+                components: [new TextDisplayBuilder().setContent(`❌ Could not find any skill matching **"${query}"**.`)],
                 flags: MessageFlags.IsComponentsV2,
             });
         }
@@ -84,18 +76,18 @@ module.exports = {
         const container = new ContainerBuilder().setAccentColor(accentHex);
 
         const rarityText = RARITY_LABELS[skill.rarity] || `Tier ${skill.rarity}`;
-        const spText = skill.sp_cost ? `${skill.sp_cost} SP` : 'Innate / Unique';
-        const statusText = skill.released_gl ? '🌐 Global' : '🇯🇵 JP Only';
+        const spText = skill.sp_cost ? `${skill.sp_cost} SP` : 'Unique';
+        const statusText = skill.released_gl ? 'Global' : 'JP Only';
 
         const descLines = [
             skill.desc_en ? `> ${skill.desc_en}` : null,
-            skill.desc_jp ? `> -#*${skill.desc_jp}*` : null, // -# makes the JP subtitle smaller & muted!
+            skill.desc_jp ? `> -# *${skill.desc_jp}*` : null,
         ].filter(Boolean).join('\n');
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### ${formatSkillName(skill)}\n` +
-                `-# ${rarityText}  •  **Cost:** ${spText}  •${statusText}\n` +
+                `-# ${rarityText}  •  **Cost:** ${spText}  •  ${statusText}\n` +
                 (descLines ? `${descLines}` : '')
             )
         );
@@ -107,7 +99,7 @@ module.exports = {
             );
 
             const triggersFormatted = effectList.map((effect, idx) => {
-                const triggerLabel = effectList.length > 1 ? `**⚙️ Trigger ${idx + 1}**  •  ` : '';
+                const triggerLabel = effectList.length > 1 ? `**Trigger ${idx + 1}**  •  ` : '';
                 const durText = effect.duration > 0 ? `\`${effect.duration}s\`` : '`Instant / Passive`';
                 const cdText = effect.cooldown > 0 && effect.cooldown < 500 ? ` *(${effect.cooldown}s CD)*` : '';
 
@@ -117,14 +109,12 @@ module.exports = {
                     : '`None (Always Active)`';
 
                 const abilitiesList = (effect.abilities || []).map(formatAbility);
-                const effectsInline = abilitiesList.length > 0
-                    ? abilitiesList.join('  •  ')
-                    : 'N/A';
+                const effectsInline = abilitiesList.length > 0 ? abilitiesList.join('  •  ') : 'N/A';
 
                 return (
-                    `${triggerLabel}⏱️ **Duration:** ${durText}${cdText}\n` +
-                    `✨ **Effects:** ${effectsInline}\n` +
-                    `📋 **Conditions:**\n${condBlock}`
+                    `${triggerLabel}**Duration:** ${durText}${cdText}\n` +
+                    `**Effects:** ${effectsInline}\n` +
+                    `**Conditions:**\n${condBlock}`
                 );
             }).join('\n\n');
 
@@ -133,33 +123,17 @@ module.exports = {
             );
         }
 
-        const umaSources = skillToUmas.get(Number(skill.id)) || [];
-        const cardSources = skillToCards.get(Number(skill.id)) || [];
+        const umaCount = (skillToUmas.get(Number(skill.id)) || []).length;
+        const cardCount = (skillToCards.get(Number(skill.id)) || []).length;
 
-        if (umaSources.length > 0 || cardSources.length > 0) {
-            container.addSeparatorComponents(
-                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            const sourceParts = [];
-            if (umaSources.length > 0) {
-                const shownUmas = umaSources.slice(0, 5).join('\n');
-                const extra = umaSources.length > 5 ? `\n-# *...and ${umaSources.length - 5} more*` : '';
-                sourceParts.push(`**🥕 Playable Umas (${umaSources.length})**\n${shownUmas}${extra}`);
-            }
-            if (cardSources.length > 0) {
-                const shownCards = cardSources.slice(0, 5).join('\n');
-                const extra = cardSources.length > 5 ? `\n-# *...and ${cardSources.length - 5} more*` : '';
-                sourceParts.push(`**🃏 Support Cards (${cardSources.length})**\n${shownCards}${extra}`);
-            }
-
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(sourceParts.join('\n\n'))
-            );
-        }
-
+        const skillName = skill.name_en || skill.name_jp;
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`-# Skill ID: ${skill.id} • Grade Value: ${skill.grade_value || 0}`)
+            new TextDisplayBuilder().setContent(
+                `-# ID: ${skill.id} • Grade: ${skill.grade_value || 0} • Sources: ${umaCount} Umas. \`/us skill:${skillName}\` to view them | ${cardCount} Cards. \`/cs skill:${skillName}\` to view them`
+            )
         );
 
         await interaction.editReply({
