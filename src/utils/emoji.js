@@ -62,7 +62,7 @@ function e(name, fallback = '') {
 }
 
 /**
- * Resolves a Support Card rarity emoji ('R', 'SR', 'SSR')
+ * Resolves a 2-part Support Card rarity emoji ('R', 'SR', 'SSR') using _1 and _2.
  * @param {string} val - 'R', 'SR', or 'SSR'
  * @returns {string}
  */
@@ -70,7 +70,11 @@ function rarity(val) {
     if (!val) return '';
     const key = String(val).trim().toLowerCase();
 
-    return emojiCache.get(`rarity_${key}`);
+    const left = emojiCache.get(`rarity_${key}_1`);
+    const right = emojiCache.get(`rarity_${key}_2`);
+
+    if (left && right) return `${left}${right}`;
+    return String(val);
 }
 
 /**
