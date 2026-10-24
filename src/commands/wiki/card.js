@@ -11,6 +11,8 @@ const {
 } = require('discord.js');
 const { getGameData, formatCardDisplayName, formatSkillName } = require('../../utils/gamedata.js');
 
+const { rarity, type } = require("./utils/emoji.js");
+
 const RARITY_COLORS = {
     SSR: 0xA864FD,
     SR: 0xF5C542,
@@ -115,8 +117,8 @@ module.exports = {
         const headerSection = new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `### ${formatCardDisplayName(card)}${subTitleJp}\n` +
-                    `-# **Rarity:** ${card.rarity}  •  **Type:** ${card.type}  •  **Server:** ${serverText}\n` +
+                    `### ${formatCardDisplayName(card)}${subTitleJp}${rarity(card.rarity)}${type(card.type)}\n` +
+                    `-# **Server:** ${serverText}\n` +
                     `-# **Skills:** ${hintIds.length} Hint(s), ${eventIds.length} Event(s)`
                 )
             )

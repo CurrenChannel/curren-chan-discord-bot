@@ -10,6 +10,8 @@ const {
 } = require('discord.js');
 const { getGameData, formatUmaDisplayName, formatSkillName } = require('../../utils/gamedata.js');
 
+const { stars, rank, type } = require("./utils/emoji.js");
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('uma')
@@ -94,16 +96,16 @@ module.exports = {
 
         const container = new ContainerBuilder().setAccentColor(accentColor);
 
-        const rarityStars = `${char.rarity || char.default_rarity || 3}-Star`;
+        const rarityStars = stars(char.rarity || char.default_rarity || 3);
         const serverText = char.released_gl ? 'Global' : 'JP Only';
         const subTitleJp = char.full_name_jp ? `\n-# ${char.full_name_jp}` : '';
 
         const statLabels = [
-            ['speed', 'SPD'],
-            ['stamina', 'STA'],
-            ['power', 'PWR'],
-            ['guts', 'GUT'],
-            ['wit', 'WIT'],
+            ['speed', type('speed')],
+            ['stamina', type('stamina')],
+            ['power', type('power')],
+            ['guts', type('guts')],
+            ['wit', type('wit')],
         ];
         const statBonusParts = [];
         if (char.stat_bonuses) {
@@ -120,9 +122,9 @@ module.exports = {
         const style = apt.style || {};
 
         const aptitudesText =
-            `**Track:** Turf \`${surf.turf || '-'}\`  •  Dirt \`${surf.dirt || '-'}\`\n` +
-            `**Distance:** Sprint \`${dist.sprint || '-'}\`  •  Mile \`${dist.mile || '-'}\`  •  Med \`${dist.medium || '-'}\`  •  Long \`${dist.long || '-'}\`\n` +
-            `**Style:** Front \`${style.front || '-'}\`  •  Pace \`${style.pace || '-'}\`  •  Late \`${style.late || '-'}\`  •  End \`${style.end || '-'}\``;
+            `**Track:** Turf ${rank(surf.turf) || '-'}  •  Dirt ${rank(surf.dirt) || '-'}\n` +
+            `**Distance:** Sprint ${rank(dist.sprint) || '-'}  •  Mile ${rank(dist.mile) || '-'}  •  Med ${rank(dist.medium) || '-'}  •  Long ${rank(dist.long) || '-'}\n` +
+            `**Style:** Front ${rank(style.front) || '-'}  •  Pace ${rank(style.pace) || '-'}  •  Late ${rank(style.late) || '-'}  •  End ${rank(style.end) || '-'}`;
 
         const charId = char.chara_id;
         const outfitId = char.outfit_id || char.id;
