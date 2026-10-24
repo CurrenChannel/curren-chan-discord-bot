@@ -42,9 +42,12 @@ module.exports = {
 
         await interaction.respond(
             matches.slice(0, 25).map(s => {
-                const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
-                const tag = s.released_gl ? '' : ' [JP]';
-                return { name: `${label}${tag}`.slice(0, 100), value: String(s.id) };
+                const label = s.name_en ? s.name_en : s.name_jp;
+                
+                const inheritTag = s.id >= 900000 && s.id < 1000000 ? ' (Inherited)' : '';
+                const glTag = s.released_gl ? '' : ' [JP]';
+                
+                return { name: `${label}${inheritTag}${glTag}`.slice(0, 100), value: String(s.id) };
             })
         );
     },
