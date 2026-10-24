@@ -122,9 +122,9 @@ module.exports = {
         const style = apt.style || {};
 
         const aptitudesText =
-            `**Track:** Turf ${rank(surf.turf) || '-'}  •  Dirt ${rank(surf.dirt) || '-'}\n` +
-            `**Distance:** Sprint ${rank(dist.sprint) || '-'}  •  Mile ${rank(dist.mile) || '-'}  •  Med ${rank(dist.medium) || '-'}  •  Long ${rank(dist.long) || '-'}\n` +
-            `**Style:** Front ${rank(style.front) || '-'}  •  Pace ${rank(style.pace) || '-'}  •  Late ${rank(style.late) || '-'}  •  End ${rank(style.end) || '-'}`;
+            `Turf ${rank(surf.turf) || '-'}  •  Dirt ${rank(surf.dirt) || '-'}\n` +
+            `Sprint ${rank(dist.sprint) || '-'}  •  Mile ${rank(dist.mile) || '-'}  •  Med ${rank(dist.medium) || '-'}  •  Long ${rank(dist.long) || '-'}\n` +
+            `Front ${rank(style.front) || '-'}  •  Pace ${rank(style.pace) || '-'}  •  Late ${rank(style.late) || '-'}  •  End ${rank(style.end) || '-'}`;
 
         const charId = char.chara_id;
         const outfitId = char.outfit_id || char.id;
