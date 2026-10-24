@@ -162,7 +162,7 @@ module.exports = {
         if (awakeningList.length > 0) {
             skillSections.push(
                 `**Awakening Skills**\n` +
-                    awakeningList.map(a => `• **Lv.${a.level}:** ${resolveSkill(a.skill_id)}`).join('\n')
+                    awakeningList.map(a => `• **Lv.${a.awakening_lv}:** ${resolveSkill(a.skill_id)}`).join('\n')
             );
         }
 
