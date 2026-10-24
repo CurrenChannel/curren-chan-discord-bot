@@ -128,4 +128,5 @@ module.exports = {
     rank,
     type,
     stars,
+    skillIcon,
 };
