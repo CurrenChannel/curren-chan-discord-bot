@@ -139,13 +139,11 @@ module.exports = {
             )
             .setThumbnailAccessory(new ThumbnailBuilder().setURL(imageUrl));
 
-        const aptitudesSection = new SectionBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(aptitudesText),
-            );
-
         container.addSectionComponents(headerSection);
-        container.addSectionComponents(aptitudesSection);
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(aptitudesText));
 
         const resolveSkill = id => {
             const s = skillById.get(Number(id));
