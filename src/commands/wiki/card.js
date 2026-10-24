@@ -11,7 +11,7 @@ const {
 } = require('discord.js');
 const { getGameData, formatCardDisplayName, formatSkillName } = require('../../utils/gamedata.js');
 
-const { rarity, type } = require("./utils/emoji.js");
+const { rarity, type } = require("../../utils/emoji.js");
 
 const RARITY_COLORS = {
     SSR: 0xA864FD,

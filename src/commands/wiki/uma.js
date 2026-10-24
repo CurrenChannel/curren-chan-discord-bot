@@ -10,7 +10,7 @@ const {
 } = require('discord.js');
 const { getGameData, formatUmaDisplayName, formatSkillName } = require('../../utils/gamedata.js');
 
-const { stars, rank, type } = require("./utils/emoji.js");
+const { stars, rank, type } = require("../../utils/emoji.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
