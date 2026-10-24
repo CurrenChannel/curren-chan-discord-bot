@@ -114,7 +114,7 @@ module.exports = {
                 if (val > 0) statBonusParts.push(`${short} +${val}%`);
             }
         }
-        const bonusLine = statBonusParts.length > 0 ? `**Bonuses:** ${statBonusParts.join(', ')}` : '';
+        const bonusLine = statBonusParts.length > 0 ? `${statBonusParts.join(', ')}` : '';
 
         const apt = char.aptitudes || {};
         const surf = apt.surface || {};
@@ -163,13 +163,13 @@ module.exports = {
         const skillSections = [];
 
         if (char.skills?.unique) {
-            skillSections.push(`**Unique Skill**\n• ${resolveSkill(char.skills.unique)}`);
+            skillSections.push(`**Unique Skill**\n${resolveSkill(char.skills.unique)}`);
         }
 
         const innateIds = char.skills?.innate || [];
         if (innateIds.length > 0) {
             skillSections.push(
-                `**Innate Skills**\n` + innateIds.map(id => `• ${resolveSkill(id)}`).join('\n')
+                `**Innate Skills**\n` + innateIds.map(id => `${resolveSkill(id)}`).join('\n')
             );
         }
 
