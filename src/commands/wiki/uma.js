@@ -124,16 +124,16 @@ module.exports = {
         const gap = '\u2003';
 
         const aptitudesText =
-            `Turf\u2004\u2005\u2009${rank(surf.turf)}${gap}` +
+            `Turf\u2004\u2004\u2005\u2009${rank(surf.turf)}${gap}` +
             `Dirt\u2002\u2005\u200A${rank(surf.dirt)}\n` +
             `Sprint\u2009${rank(dist.sprint)}${gap}` +
             `Mile\u2002\u2009${rank(dist.mile)}${gap}` +
             `Med\u2002\u200A${rank(dist.medium)}${gap}` +
             `Long\u2005\u200A${rank(dist.long)}\n` +
-            `Front\u2005\u2009${rank(style.front)}${gap}` +
-            `Pace\u2005\u2009${rank(style.pace)}${gap}` +
-            `Late\u2004\u2009${rank(style.late)}${gap}` +
-            `End\u2002\u200A${rank(style.end)}`;
+            `Front\u2005\u2009\u200A${rank(style.front)}${gap}` +
+            `Pace\u2009\u200A\u200A${rank(style.pace)}${gap}` +
+            `Late\u2002\u2009${rank(style.late)}${gap}` +
+            `End\u2002\u2009\u200A${rank(style.end)}`;
 
         const charId = char.chara_id;
         const outfitId = char.outfit_id || char.id;
