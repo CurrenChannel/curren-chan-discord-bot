@@ -38,7 +38,7 @@ for (const folder of commandFolders) {
 client.once(Events.ClientReady, async (readyClient) => {
     console.log(`✅ Ready! Logged in as ${readyClient.user.tag}`);
 
-    loadBotEmojis();
+    loadBotEmojis(client);
     
     try {
         const names = await getUmaNames();
