@@ -24,9 +24,9 @@ module.exports = {
 
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase().trim();
-        const { umas } = await getGameData();
+        const { characters } = await getGameData();
 
-        const matches = umas.filter(u => {
+        const matches = characters.filter(u => {
             const fullEn = (u.full_name_en || '').toLowerCase();
             const fullJp = (u.full_name_jp || '').toLowerCase();
             const nameEn = (u.chara_name_en || '').toLowerCase();
@@ -62,18 +62,18 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const query = interaction.options.getString('query').trim();
-        const { umas, skillById, charaById } = await getGameData();
+        const { characters, skillById, charaById } = await getGameData();
 
-        let uma = umas.find(u => String(u.id) === query);
-        if (!uma) {
+        let char = characters.find(u => String(u.id) === query);
+        if (!char) {
             const qLower = query.toLowerCase();
-            uma =
-                umas.find(
+            char =
+                characters.find(
                     u =>
                         (u.full_name_en && u.full_name_en.toLowerCase() === qLower) ||
                         (u.full_name_jp && u.full_name_jp.toLowerCase() === qLower)
                 ) ||
-                umas.find(
+                characters.find(
                     u =>
                         (u.full_name_en && u.full_name_en.toLowerCase().includes(qLower)) ||
                         (u.full_name_jp && u.full_name_jp.toLowerCase().includes(qLower)) ||
@@ -81,22 +81,22 @@ module.exports = {
                 );
         }
 
-        if (!uma) {
+        if (!char) {
             return interaction.editReply({
                 components: [new TextDisplayBuilder().setContent(`Could not find any Playable Uma matching **"${query}"**.`)],
                 flags: MessageFlags.IsComponentsV2,
             });
         }
 
-        const charaMeta = charaById?.get(Number(uma.chara_id));
-        const rawHex = uma.color_main || charaMeta?.color_main;
+        const charaMeta = charaById?.get(Number(char.chara_id));
+        const rawHex = char.color_main || charaMeta?.color_main;
         const accentColor = rawHex ? parseInt(rawHex.replace('#', ''), 16) : 0xF5A9B8;
 
         const container = new ContainerBuilder().setAccentColor(accentColor);
 
-        const rarityStars = `${uma.rarity || uma.default_rarity || 3}-Star`;
-        const serverText = uma.released_gl ? 'Global' : 'JP Only';
-        const subTitleJp = uma.full_name_jp ? `\n-# ${uma.full_name_jp}` : '';
+        const rarityStars = `${char.rarity || char.default_rarity || 3}-Star`;
+        const serverText = char.released_gl ? 'Global' : 'JP Only';
+        const subTitleJp = char.full_name_jp ? `\n-# ${char.full_name_jp}` : '';
 
         const statLabels = [
             ['speed', 'SPD'],
@@ -106,15 +106,15 @@ module.exports = {
             ['wit', 'WIT'],
         ];
         const statBonusParts = [];
-        if (uma.stat_bonuses) {
+        if (char.stat_bonuses) {
             for (const [key, short] of statLabels) {
-                const val = Number(uma.stat_bonuses[key] || 0);
+                const val = Number(char.stat_bonuses[key] || 0);
                 if (val > 0) statBonusParts.push(`${short} +${val}%`);
             }
         }
         const bonusLine = statBonusParts.length > 0 ? `  •  **Bonuses:** ${statBonusParts.join(', ')}` : '';
 
-        const apt = uma.aptitudes || {};
+        const apt = char.aptitudes || {};
         const surf = apt.surface || {};
         const dist = apt.distance || {};
         const style = apt.style || {};
@@ -124,14 +124,14 @@ module.exports = {
             `**Distance:** Sprint \`${dist.sprint || '-'}\`  •  Mile \`${dist.mile || '-'}\`  •  Med \`${dist.medium || '-'}\`  •  Long \`${dist.long || '-'}\`\n` +
             `**Style:** Front \`${style.front || '-'}\`  •  Pace \`${style.pace || '-'}\`  •  Late \`${style.late || '-'}\`  •  End \`${style.end || '-'}\``;
 
-        const charId = uma.chara_id;
-        const outfitId = uma.outfit_id || uma.id;
+        const charId = char.chara_id;
+        const outfitId = char.outfit_id || char.id;
         const imageUrl = `https://gametora.com/images/umamusume/characters/chara_stand_${charId}_${outfitId}.png`;
 
         const headerSection = new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `### ${formatUmaDisplayName(uma)}${subTitleJp}\n` +
+                    `### ${formatUmaDisplayName(char)}${subTitleJp}\n` +
                     `-# **Rarity:** ${rarityStars}  •  **Server:** ${serverText}${bonusLine}`
                 ),
                 new TextDisplayBuilder().setContent(aptitudesText)
@@ -147,18 +147,18 @@ module.exports = {
 
         const skillSections = [];
 
-        if (uma.skills?.unique) {
-            skillSections.push(`**Unique Skill**\n• ${resolveSkill(uma.skills.unique)}`);
+        if (char.skills?.unique) {
+            skillSections.push(`**Unique Skill**\n• ${resolveSkill(char.skills.unique)}`);
         }
 
-        const innateIds = uma.skills?.innate || [];
+        const innateIds = char.skills?.innate || [];
         if (innateIds.length > 0) {
             skillSections.push(
                 `**Innate Skills**\n` + innateIds.map(id => `• ${resolveSkill(id)}`).join('\n')
             );
         }
 
-        const awakeningList = uma.skills?.awakening || [];
+        const awakeningList = char.skills?.awakening || [];
         if (awakeningList.length > 0) {
             skillSections.push(
                 `**Awakening Skills**\n` +
@@ -166,7 +166,7 @@ module.exports = {
             );
         }
 
-        const evolvedList = uma.skills?.evolved || [];
+        const evolvedList = char.skills?.evolved || [];
         if (evolvedList.length > 0) {
             skillSections.push(
                 `**Evolved Skills**\n` +
