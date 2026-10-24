@@ -94,7 +94,7 @@ function rank(grade) {
 function type(cardType, includeLabel = false) {
     if (!cardType) return '';
     const key = String(cardType).trim().toLowerCase();
-    const icon = emojiCache.get(`stat_${key}`) || emojiCache.get(key);
+    const icon = emojiCache.get(`type_${key}`) || emojiCache.get(key);
 
     if (!icon) return String(cardType);
     return includeLabel ? `${icon} ${cardType}` : icon;
