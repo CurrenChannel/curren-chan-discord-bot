@@ -133,14 +133,19 @@ module.exports = {
         const headerSection = new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `### ${formatUmaDisplayName(char)}${subTitleJp}\n` +
-                    `-# **Rarity:** ${rarityStars}  •  **Server:** ${serverText}${bonusLine}`
+                    `### ${rarityStars} ${formatUmaDisplayName(char)}${subTitleJp}\n` +
+                    `-# **Server:** ${serverText}${bonusLine}`
                 ),
-                new TextDisplayBuilder().setContent(aptitudesText)
             )
             .setThumbnailAccessory(new ThumbnailBuilder().setURL(imageUrl));
 
+        const aptitudesSection = new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(aptitudesText),
+            );
+
         container.addSectionComponents(headerSection);
+        container.addSectionComponents(aptitudesSection);
 
         const resolveSkill = id => {
             const s = skillById.get(Number(id));
