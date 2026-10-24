@@ -117,7 +117,8 @@ module.exports = {
         const headerSection = new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `### ${formatCardDisplayName(card)}${type(card.type)}${rarity(card.rarity)}${subTitleJp}\n` +
+                    `## ${rarity(card.rarity)}` +
+                    `### ${formatCardDisplayName(card)}${type(card.type)}${subTitleJp}\n` +
                     `-# **Server:** ${serverText}\n` +
                     `-# **Skills:** ${hintIds.length} Hint(s), ${eventIds.length} Event(s)`
                 )
