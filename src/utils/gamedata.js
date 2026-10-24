@@ -3,7 +3,7 @@ const CHARACTERS_URL = 'https://curren.channel/data/gamedata/characters.json';
 const CARDS_URL = 'https://curren.channel/data/gamedata/cards.json';
 const SKILLS_URL = 'https://curren.channel/data/gamedata/skills.json';
 
-const { skillIcon } = require("../../utils/emoji.js");
+const { skillIcon } = require("./emoji.js");
 
 let cache = null;
 let lastFetched = 0;
