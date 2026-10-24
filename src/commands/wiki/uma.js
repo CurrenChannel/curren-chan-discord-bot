@@ -114,7 +114,7 @@ module.exports = {
                 if (val > 0) statBonusParts.push(`${short} +${val}%`);
             }
         }
-        const bonusLine = statBonusParts.length > 0 ? `  •  **Bonuses:** ${statBonusParts.join(', ')}` : '';
+        const bonusLine = statBonusParts.length > 0 ? `**Bonuses:** ${statBonusParts.join(', ')}` : '';
 
         const apt = char.aptitudes || {};
         const surf = apt.surface || {};
@@ -143,7 +143,8 @@ module.exports = {
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     `### ${rarityStars} ${formatUmaDisplayName(char)}${subTitleJp}\n` +
-                    `-# **Server:** ${serverText}${bonusLine}`
+                    `-# **Server:** ${serverText}\n` +
+                    `${bonusLine}`
                 ),
             )
             .setThumbnailAccessory(new ThumbnailBuilder().setURL(imageUrl));
