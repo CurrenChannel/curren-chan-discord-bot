@@ -5,6 +5,8 @@ const { Client, Collection, Events, GatewayIntentBits, MessageFlags, Permissions
 const { getUmaNames, assignOshiRole } = require('./utils/oshiHelper.js');
 const { getGameData } = require('./utils/gamedata.js');
 
+const { loadBotEmojis } = require("./utils/emoji.js");
+
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
     rest: {
@@ -36,6 +38,8 @@ for (const folder of commandFolders) {
 client.once(Events.ClientReady, async (readyClient) => {
     console.log(`✅ Ready! Logged in as ${readyClient.user.tag}`);
 
+    loadBotEmojis();
+    
     try {
         const names = await getUmaNames();
         console.log(`🥕 Pre-loaded ${names.length} Umamusume names into cache.`);
