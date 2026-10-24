@@ -1,91 +1,68 @@
 // commands/utility/card.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getGameData, formatCardDisplayName } = require('../../utils/gamedata.js');
+const {
+    SlashCommandBuilder,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MessageFlags,
+} = require('discord.js');
+const { getGameData, formatCardDisplayName, formatSkillName } = require('../../utils/gamedata.js');
 
-const TYPE_EMOJI = {
-    Speed: '⚡',
-    Stamina: '❤️',
-    Power: '💪',
-    Guts: '🔥',
-    Wit: '🎓',
-    Friend: '💛',
-    Group: '👥',
+const RARITY_COLORS = {
+    SSR: 0xA864FD,
+    SR: 0xF5C542,
+    R: 0x99AAB5,
 };
 
 module.exports = {
-    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('card')
-        .setDescription('Look up a Support Card and its training hint skills')
+        .setDescription('Look up an Umamusume Support Card and its hint and event skills')
         .addStringOption(option =>
             option
                 .setName('query')
-                .setDescription('Support Card character name or title')
+                .setDescription('Support card or character name (EN or JP)')
                 .setRequired(true)
                 .setAutocomplete(true)
-        )
-        .addStringOption(option =>
-            option
-                .setName('type')
-                .setDescription('Optional filter by Support Card stat type')
-                .addChoices(
-                    { name: '⚡ Speed', value: 'Speed' },
-                    { name: '❤️ Stamina', value: 'Stamina' },
-                    { name: '💪 Power', value: 'Power' },
-                    { name: '🔥 Guts', value: 'Guts' },
-                    { name: '🎓 Wit', value: 'Wit' },
-                    { name: '💛 Friend / Group', value: 'Friend' }
-                )
-        )
-        .addStringOption(option =>
-            option
-                .setName('rarity')
-                .setDescription('Optional filter by Rarity (SSR, SR, R)')
-                .addChoices(
-                    { name: 'SSR', value: 'SSR' },
-                    { name: 'SR', value: 'SR' },
-                    { name: 'R', value: 'R' }
-                )
         ),
 
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase().trim();
-        const typeFilter = interaction.options.getString('type');
-        const rarityFilter = interaction.options.getString('rarity');
-        const { cards, baseUmaById } = await getGameData();
+        const { cards } = await getGameData();
 
-        const matches = cards.filter(card => {
-            if (typeFilter && !card.type.includes(typeFilter)) return false;
-            if (rarityFilter && card.rarity !== rarityFilter) return false;
-            if (!focused) return true;
-
-            const baseUma = baseUmaById.get(Number(card.chara_id));
-            const nicknames = (baseUma?.search_names || '').toLowerCase();
-            const display = formatCardDisplayName(card).toLowerCase();
-            const jpName = (card.full_name_jp || '').toLowerCase();
-
+        const matches = cards.filter(c => {
+            const fullEn = (c.full_name_en || '').toLowerCase();
+            const fullJp = (c.full_name_jp || '').toLowerCase();
+            const nameEn = (c.chara_name_en || '').toLowerCase();
+            const typeStr = `${c.rarity} ${c.type}`.toLowerCase();
             return (
-                display.includes(focused) ||
-                jpName.includes(focused) ||
-                nicknames.includes(focused)
+                !focused ||
+                fullEn.includes(focused) ||
+                fullJp.includes(focused) ||
+                nameEn.includes(focused) ||
+                typeStr.includes(focused) ||
+                String(c.id) === focused
             );
         });
 
-        // Sort SSRs & Global-released cards first
-        const rarityOrder = { SSR: 3, SR: 2, R: 1 };
         matches.sort((a, b) => {
+            const aStarts = (a.chara_name_en || '').toLowerCase().startsWith(focused) ? 1 : 0;
+            const bStarts = (b.chara_name_en || '').toLowerCase().startsWith(focused) ? 1 : 0;
+            if (aStarts !== bStarts) return bStarts - aStarts;
             if (a.released_gl !== b.released_gl) return (b.released_gl ? 1 : 0) - (a.released_gl ? 1 : 0);
-            if (a.rarity !== b.rarity) return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
-            return a.id - b.id;
+            return b.id - a.id;
         });
 
         await interaction.respond(
-            matches.slice(0, 25).map(card => {
-                const flag = card.released_gl ? '🌐' : '🇯🇵';
-                const emoji = TYPE_EMOJI[card.type] || '🃏';
+            matches.slice(0, 25).map(c => {
+                const label = `${formatCardDisplayName(c)} (${c.rarity} ${c.type})`;
+                const tag = c.released_gl ? '' : ' [JP]';
                 return {
-                    name: `${flag} [${card.rarity}${emoji}${card.type}]${formatCardDisplayName(card)}`.slice(0, 100),
-                    value: String(card.id),
+                    name: `${label}${tag}`.slice(0, 100),
+                    value: String(c.id),
                 };
             })
         );
@@ -94,49 +71,95 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const query = interaction.options.getString('query').trim();
-        const { cards, baseUmaById, skillById } = await getGameData();
+        const { cards, skillById } = await getGameData();
 
         let card = cards.find(c => String(c.id) === query);
         if (!card) {
             const qLower = query.toLowerCase();
-            card = cards.find(c => formatCardDisplayName(c).toLowerCase().includes(qLower));
+            card =
+                cards.find(
+                    c =>
+                        (c.full_name_en && c.full_name_en.toLowerCase() === qLower) ||
+                        (c.full_name_jp && c.full_name_jp.toLowerCase() === qLower)
+                ) ||
+                cards.find(
+                    c =>
+                        (c.full_name_en && c.full_name_en.toLowerCase().includes(qLower)) ||
+                        (c.full_name_jp && c.full_name_jp.toLowerCase().includes(qLower)) ||
+                        (c.chara_name_en && c.chara_name_en.toLowerCase().includes(qLower))
+                );
         }
 
         if (!card) {
-            return interaction.editReply(`❌ Could not find any Support Card matching **"${query}"**.`);
+            return interaction.editReply({
+                components: [new TextDisplayBuilder().setContent(`Could not find any Support Card matching **"${query}"**.`)],
+                flags: MessageFlags.IsComponentsV2,
+            });
         }
 
-        const baseUma = baseUmaById.get(Number(card.chara_id));
-        const embedColor = baseUma?.color_main || (card.rarity === 'SSR' ? '#B978FF' : card.rarity === 'SR' ? '#F5C542' : '#A8B5C2');
-        const emoji = TYPE_EMOJI[card.type] || '🃏';
+        const accentColor = RARITY_COLORS[card.rarity] || 0x5865F2;
+        const container = new ContainerBuilder().setAccentColor(accentColor);
 
-        const resolveSkillWithCost = (sid) => {
-            const s = skillById.get(Number(sid));
-            if (!s) return `• Skill #${sid}`;
-            const name = s.name_en ? `**${s.name_en}** *(${s.name_jp})*` : `**${s.name_jp}**`;
-            const cost = s.sp_cost ? ` — \`${s.sp_cost} SP\`` : '';
-            return `• ${name}${cost}`;
+        const serverText = card.released_gl ? 'Global' : 'JP Only';
+        const subTitleJp = card.full_name_jp ? `\n-# ${card.full_name_jp}` : '';
+        const imageUrl = `https://media.gametora.com/umamusume/supports/full/small/${card.id}.png`;
+
+        const resolveSkill = id => {
+            const s = skillById.get(Number(id));
+            return s ? formatSkillName(s) : `Skill #${id}`;
         };
 
-        const hintList = (card.skills?.hints || []).map(resolveSkillWithCost).join('\n') || 'None listed in database';
-        const eventList = (card.skills?.events || []).map(resolveSkillWithCost).join('\n');
+        const hintIds = card.skills?.hints || [];
+        const eventIds = card.skills?.events || [];
 
-        const embed = new EmbedBuilder()
-            .setTitle(`[${card.rarity} ${emoji} ${card.type}] ${formatCardDisplayName(card)}`)
-            .setColor(embedColor)
-            .setDescription(
-                `${card.full_name_jp ? `**JP:** ${card.full_name_jp}\n` : ''}` +
-                `**Status:** ${card.released_gl ? '🌐 Released on Global' : '🇯🇵 JP Only'}`
+        const headerSection = new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `### ${formatCardDisplayName(card)}${subTitleJp}\n` +
+                    `-# **Rarity:** ${card.rarity}  •  **Type:** ${card.type}  •  **Server:** ${serverText}\n` +
+                    `-# **Skills:** ${hintIds.length} Hint(s), ${eventIds.length} Event(s)`
+                )
             )
-            .addFields(
-                { name: `💡 Training Hint Skills (${card.skills?.hints?.length || 0})`, value: hintList.slice(0, 1024), inline: false }
-            )
-            .setFooter({ text: `Support Card ID: ${card.id} • Chara ID: ${card.chara_id}` });
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(imageUrl));
 
-        if (eventList) {
-            embed.addFields({ name: '✨ Event Skills', value: eventList.slice(0, 1024), inline: false });
+        container.addSectionComponents(headerSection);
+
+        const skillBlocks = [];
+
+        if (hintIds.length > 0) {
+            skillBlocks.push(
+                `**Training Hint Skills (${hintIds.length})**\n` +
+                    hintIds.map(id => `• ${resolveSkill(id)}`).join('\n')
+            );
         }
 
-        await interaction.editReply({ embeds: [embed] });
+        if (eventIds.length > 0) {
+            skillBlocks.push(
+                `**Event Skills (${eventIds.length})**\n` +
+                    eventIds.map(id => `• ${resolveSkill(id)}`).join('\n')
+            );
+        }
+
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                skillBlocks.length > 0 ? skillBlocks.join('\n\n') : '*No skills listed for this card.*'
+            )
+        );
+
+        container.addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        );
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`-# Card ID: ${card.id}  •  Chara ID: ${card.chara_id}`)
+        );
+
+        await interaction.editReply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
     },
 };
