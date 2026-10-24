@@ -5,7 +5,12 @@ const { Client, Collection, Events, GatewayIntentBits, MessageFlags, Permissions
 const { getUmaNames, assignOshiRole } = require('./utils/oshiHelper.js');
 const { getGameData } = require('./utils/gamedata.js');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+    rest: {
+        api: process.env.PROXY_URL,
+    }
+});
 
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
