@@ -131,14 +131,14 @@ module.exports = {
         if (hintIds.length > 0) {
             skillBlocks.push(
                 `**Training Hint Skills (${hintIds.length})**\n` +
-                    hintIds.map(id => `• ${resolveSkill(id)}`).join('\n')
+                    hintIds.map(id => `${resolveSkill(id)}`).join('\n')
             );
         }
 
         if (eventIds.length > 0) {
             skillBlocks.push(
                 `**Event Skills (${eventIds.length})**\n` +
-                    eventIds.map(id => `• ${resolveSkill(id)}`).join('\n')
+                    eventIds.map(id => `${resolveSkill(id)}`).join('\n')
             );
         }
 

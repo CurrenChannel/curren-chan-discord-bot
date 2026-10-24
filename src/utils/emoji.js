@@ -108,7 +108,17 @@ function type(cardType, includeLabel = false) {
 function stars(count) {
     const num = Number(count) || 3;
     const starIcon = "⭐";
-    return starIcon ? starIcon.repeat(num) : `${num}★`;
+    return starIcon.repeat(num);
+}
+
+/**
+ * Resolves a Skill Icon emoji by skill object or icon_id
+ * @param {string} iconId - Skill icon id
+ * @returns {string}
+ */
+function skillIcon(iconId) {
+    if (!iconId) return '';
+    return emojiCache.get(`skill_${iconId}`) || '';
 }
 
 module.exports = {

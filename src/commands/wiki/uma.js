@@ -177,7 +177,7 @@ module.exports = {
         if (awakeningList.length > 0) {
             skillSections.push(
                 `**Awakening Skills**\n` +
-                    awakeningList.map(a => `• **Lv.${a.awakening_lv}:** ${resolveSkill(a.skill_id)}`).join('\n')
+                    awakeningList.map(a => `${resolveSkill(a.skill_id)} | **Lv.${a.awakening_lv}**`).join('\n')
             );
         }
 
@@ -186,7 +186,7 @@ module.exports = {
             skillSections.push(
                 `**Evolved Skills**\n` +
                     evolvedList
-                        .map(e => `• ${resolveSkill(e.evolved_skill_id)} *(from ${resolveSkill(e.base_skill_id)})*`)
+                        .map(e => `${resolveSkill(e.evolved_skill_id)} *(from ${resolveSkill(e.base_skill_id)})*`)
                         .join('\n')
             );
         }

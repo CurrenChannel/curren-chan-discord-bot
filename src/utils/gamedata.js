@@ -3,6 +3,8 @@ const CHARACTERS_URL = 'https://curren.channel/data/gamedata/characters.json';
 const CARDS_URL = 'https://curren.channel/data/gamedata/cards.json';
 const SKILLS_URL = 'https://curren.channel/data/gamedata/skills.json';
 
+const { skillIcon } = require("../../utils/emoji.js");
+
 let cache = null;
 let lastFetched = 0;
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
@@ -134,10 +136,15 @@ function formatCardDisplayName(card) {
 
 function formatSkillName(skill) {
     if (!skill) return 'Unknown Skill';
+
+    let icon = '';
+    if (skill.icon_id)
+        icon = `${skillIcon(skill.icon_id)} `;
+
     if (skill.name_en && skill.name_jp && skill.name_en !== skill.name_jp) {
-        return `${skill.name_en} (${skill.name_jp})`;
+        return `${icon}${skill.name_en} (${skill.name_jp})`;
     }
-    return skill.name_en || skill.name_jp || `Skill #${skill.id}`;
+    return `${icon}${skill.name_en || skill.name_jp || `Skill #${skill.id}`}`;
 }
 
 function formatAbility(ability) {
