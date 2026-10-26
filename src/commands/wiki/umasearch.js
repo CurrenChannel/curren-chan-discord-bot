@@ -9,6 +9,7 @@ const {
 } = require('discord.js');
 const { getGameData, formatSkillName, formatUmaDisplayName } = require('../../utils/gamedata.js');
 const { buildPaginationRow } = require('../../utils/pagination');
+const { stars } = require('../../utils/emoji.js');
 
 const ITEMS_PER_PAGE = 15;
 
@@ -46,8 +47,7 @@ async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 
         const umaRarity = Number(u.rarity || u.default_rarity || 3);
         if (rarityFilter && umaRarity !== Number(rarityFilter)) continue;
 
-        const flag = u.released_gl ? '🌐' : '🇯🇵';
-        const stars = '⭐'.repeat(umaRarity);
+        const rarityStars = stars(umaRarity);
         const name = formatUmaDisplayName(u);
 
         if (targetId) {
@@ -55,7 +55,7 @@ async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 
             if (Number(u.skills?.unique) === targetId) sources.push('Unique');
             if ((u.skills?.innate || []).map(Number).includes(targetId)) sources.push('Innate');
             for (const awk of u.skills?.awakening || []) {
-                if (Number(awk.skill_id) === targetId) sources.push(`Lv.${awk.level}`);
+                if (Number(awk.skill_id) === targetId) sources.push(`Lv.${awk.awakening_lv}`);
             }
             for (const evo of u.skills?.evolved || []) {
                 if (Number(evo.evolved_skill_id) === targetId || Number(evo.base_skill_id) === targetId) {
@@ -63,10 +63,10 @@ async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 
                 }
             }
             if (sources.length > 0) {
-                results.push(`${flag} ${stars} **${name}** *(${sources.join(', ')})*`);
+                results.push(`${rarityStars} **${name}** *(${sources.join(', ')})*`);
             }
         } else {
-            results.push(`${flag} ${stars} **${name}**`);
+            results.push(`${rarityStars} **${name}**`);
         }
     }
 
@@ -76,10 +76,10 @@ async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 
 
     const filterBadges = [
         rarityFilter ? `${rarityFilter}★ Only` : 'All Rarities',
-        serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
+        serverFilter === 'gl' ? 'Global' : serverFilter === 'jp' ? 'JP' : 'Global + JP',
     ].join('  •  ');
 
-    const titleText = skill ? `### 🥕 Uma Search: ${formatSkillName(skill)}` : `### 🥕 Playable Uma Search`;
+    const titleText = skill ? `### Uma Search: ${formatSkillName(skill)}` : `### Uma Search`;
 
     const container = new ContainerBuilder().setAccentColor(0xFF77B7);
     container.addTextDisplayComponents(
@@ -95,7 +95,7 @@ async function buildUmaSearchPayload({ skillQuery, rarityFilter, serverFilter = 
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            pageItems.length > 0 ? pageItems.join('\n') : '*No Playable Umas found matching these filters.*'
+            pageItems.length > 0 ? pageItems.join('\n') : '*No Umas found matching these filters.*'
         )
     );
 
@@ -126,7 +126,7 @@ function createUmaSearchCommand(commandName, description) {
             .addStringOption(option =>
                 option
                     .setName('skill')
-                    .setDescription('Find Playable Umas that have this skill (Innate, Awakening, or Evolved)')
+                    .setDescription('Find Umas that have this skill (Innate, Awakening, or Evolved)')
                     .setRequired(false)
                     .setAutocomplete(true)
             )
@@ -136,9 +136,9 @@ function createUmaSearchCommand(commandName, description) {
                     .setDescription('Filter by base star rarity (1★, 2★, or 3★)')
                     .setRequired(false)
                     .addChoices(
-                        { name: '⭐⭐⭐ (3★)', value: 3 },
-                        { name: '⭐⭐ (2★)', value: 2 },
-                        { name: '⭐ (1★)', value: 1 }
+                        { name: '⭐⭐⭐', value: 3 },
+                        { name: '⭐⭐', value: 2 },
+                        { name: '⭐', value: 1 }
                     )
             )
             .addStringOption(option =>
@@ -147,9 +147,8 @@ function createUmaSearchCommand(commandName, description) {
                     .setDescription('Filter by server release status')
                     .setRequired(false)
                     .addChoices(
-                        { name: '🌐 Global', value: 'gl' },
-                        { name: '🇯🇵 JP Only', value: 'jp' },
-                        { name: '🌍 All (Global + JP)', value: 'all' }
+                        { name: 'Global', value: 'gl' },
+                        { name: 'JP', value: 'jp' },
                     )
             ),
 
@@ -173,9 +172,8 @@ function createUmaSearchCommand(commandName, description) {
 
             await interaction.respond(
                 matches.slice(0, 25).map(s => {
-                    const count = (skillToUmas.get(Number(s.id)) || []).length;
-                    const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
-                    return { name: `${label} [${count} Umas]`.slice(0, 100), value: String(s.id) };
+                    const label = s.name_en ? s.name_en : s.name_jp;
+                    return { name: `${label}`.slice(0, 100), value: String(s.id) };
                 })
             );
         },

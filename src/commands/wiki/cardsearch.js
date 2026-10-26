@@ -9,6 +9,7 @@ const {
 } = require('discord.js');
 const { getGameData, formatSkillName, formatCardDisplayName } = require('../../utils/gamedata.js');
 const { buildPaginationRow } = require('../../utils/pagination');
+const { type, rarity } = require('../../utils/emoji.js');
 
 const ITEMS_PER_PAGE = 15;
 
@@ -51,22 +52,23 @@ async function buildCardSearchPayload({ skillQuery, rarityFilter, typeFilter, se
             else if (typeFilter !== 'Friend' && card.type !== typeFilter) continue;
         }
 
-        const flag = card.released_gl ? '🌐' : '🇯🇵';
+        const flag = card.released_gl ? '[GL]' : '[JP]';
         const name = formatCardDisplayName(card);
-        const badge = `*(${card.rarity} ${card.type})*`;
+        const cardType = type(card.type);
+        const cardRarity = rarity(card.rarity);
 
         if (targetId) {
             const hints = (card.skills?.hints || []).map(Number);
             const events = (card.skills?.events || []).map(Number);
 
             if (hints.includes(targetId)) {
-                hintCards.push(`${flag} 💡 **${name}** ${badge} — *Hint*`);
+                hintCards.push(`${cardRarity} **${name}** ${cardType} | *Hint*`);
             }
             if (events.includes(targetId)) {
-                eventCards.push(`${flag} ✨ **${name}** ${badge} — *Event*`);
+                eventCards.push(`${cardRarity} **${name}** ${cardType} | *Event*`);
             }
         } else {
-            generalCards.push(`${flag} **${name}** ${badge}`);
+            generalCards.push(`${cardRarity} **${name}** ${cardType}`);
         }
     }
 
@@ -80,10 +82,10 @@ async function buildCardSearchPayload({ skillQuery, rarityFilter, typeFilter, se
     const filterSummary = [
         rarityFilter ? `Rarity: ${rarityFilter}` : 'All Rarities',
         typeFilter ? `Type: ${typeFilter}` : 'All Types',
-        serverFilter === 'gl' ? '🌐 Global' : serverFilter === 'jp' ? '🇯🇵 JP Only' : '🌍 Global + JP',
+        serverFilter === 'gl' ? 'Global' : serverFilter === 'jp' ? 'JP' : 'Global + JP',
     ].join('  •  ');
 
-    const titleText = skill ? `### 🃏 Card Search: ${formatSkillName(skill)}` : `### 🃏 Support Card Search`;
+    const titleText = skill ? `### Card Search: ${formatSkillName(skill)}` : `### Card Search`;
     const countBreakdown = targetId
         ? `**Found:** ${allResults.length} (${hintCards.length} Hints, ${eventCards.length} Events)`
         : `**Found:** ${allResults.length} Card(s)`;
@@ -143,9 +145,9 @@ function createCardSearchCommand(commandName, description) {
                     .setDescription('Filter by Support Card rarity (R, SR, or SSR)')
                     .setRequired(false)
                     .addChoices(
-                        { name: '🌈 SSR', value: 'SSR' },
-                        { name: '🟨 SR', value: 'SR' },
-                        { name: '⬜ R', value: 'R' }
+                        { name: 'SSR', value: 'SSR' },
+                        { name: 'SR', value: 'SR' },
+                        { name: 'R', value: 'R' }
                     )
             )
             .addStringOption(option =>
@@ -154,12 +156,12 @@ function createCardSearchCommand(commandName, description) {
                     .setDescription('Filter by Support Card type (Speed, Stamina, etc.)')
                     .setRequired(false)
                     .addChoices(
-                        { name: '👟 Speed', value: 'Speed' },
-                        { name: '❤️ Stamina', value: 'Stamina' },
-                        { name: '💪 Power', value: 'Power' },
-                        { name: '🔥 Guts', value: 'Guts' },
-                        { name: '🎓 Wit', value: 'Wit' },
-                        { name: '🤝 Friend / Group', value: 'Friend' }
+                        { name: 'Speed', value: 'Speed' },
+                        { name: 'Stamina', value: 'Stamina' },
+                        { name: 'Power', value: 'Power' },
+                        { name: 'Guts', value: 'Guts' },
+                        { name: 'Wit', value: 'Wit' },
+                        { name: 'Friend / Group', value: 'Friend' }
                     )
             )
             .addStringOption(option =>
@@ -168,9 +170,8 @@ function createCardSearchCommand(commandName, description) {
                     .setDescription('Filter by server release status')
                     .setRequired(false)
                     .addChoices(
-                        { name: '🌐 Global', value: 'gl' },
-                        { name: '🇯🇵 JP Only', value: 'jp' },
-                        { name: '🌍 All (Global + JP)', value: 'all' }
+                        { name: 'Global', value: 'gl' },
+                        { name: 'JP', value: 'jp' },
                     )
             ),
 
@@ -194,9 +195,8 @@ function createCardSearchCommand(commandName, description) {
 
             await interaction.respond(
                 matches.slice(0, 25).map(s => {
-                    const count = (skillToCards.get(Number(s.id)) || []).length;
-                    const label = s.name_en ? `${s.name_en} (${s.name_jp})` : s.name_jp;
-                    return { name: `${label} [${count} Cards]`.slice(0, 100), value: String(s.id) };
+                    const label = s.name_en ? s.name_en : s.name_jp;
+                    return { name: `${label}`.slice(0, 100), value: String(s.id) };
                 })
             );
         },
