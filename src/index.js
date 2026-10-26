@@ -102,6 +102,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // Buttons
     // ---------------------------------------------------------
     if (interaction.isButton()) {
+        if (interaction.customId.startsWith('card_page:')) {
+            const { handleCardPageButton } = require('./commands/wiki/card');
+            return handleCardPageButton(interaction);
+        }
+        
         if (interaction.customId.startsWith('role_toggle_')) {
             try {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
