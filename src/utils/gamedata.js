@@ -11,10 +11,10 @@ const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 const RARITY_LABELS = {
     1: '⚪ Normal',
-    2: '🟡 Rare (Gold)',
+    2: '🟡 Gold',
     3: '🌈 Unique (1★–2★)',
     4: '🌈 Unique (3★+)',
-    5: '🌈 Unique (Inherit)',
+    5: '🌈 Unique (Alt)',
     6: '🌸 Evolved',
 };
 

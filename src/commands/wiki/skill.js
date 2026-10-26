@@ -79,7 +79,6 @@ module.exports = {
         const accentHex = skill.rarity === 2 ? 0xF5C542 : skill.rarity >= 3 ? 0xFF77B7 : 0xA8B5C2;
         const container = new ContainerBuilder().setAccentColor(accentHex);
 
-        const rarityText = RARITY_LABELS[skill.rarity] || `Tier ${skill.rarity}`;
         const spText = skill.sp_cost ? `${skill.sp_cost} SP` : 'Unique';
         const statusText = skill.released_gl ? 'Global' : 'JP Only';
 
@@ -91,7 +90,8 @@ module.exports = {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### ${formatSkillName(skill)}\n` +
-                `-# ${rarityText}  •  **Cost:** ${spText}  •  ${statusText}\n` +
+                `${spText}\n` +
+                `-# ${statusText}\n` +
                 (descLines ? `${descLines}` : '')
             )
         );
