@@ -142,7 +142,7 @@ function formatSkillName(skill) {
         icon = `${skillIcon(skill.icon_id)} `;
 
     if (skill.name_en && skill.name_jp && skill.name_en !== skill.name_jp) {
-        return `${icon}${skill.name_en} (${skill.name_jp})`;
+        return `${icon}${skill.name_en}`;
     }
     return `${icon}${skill.name_en || skill.name_jp || `Skill #${skill.id}`}`;
 }
