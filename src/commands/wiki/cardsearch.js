@@ -244,6 +244,6 @@ async function handleCardSearchButton(interaction) {
     await interaction.update(payload);
 }
 
-module.exports = createCardSearchCommand('cardsearch', 'Search for Support Cards by skill, rarity, type, or server');
+module.exports = createCardSearchCommand('cardsearch', 'Search Support Cards by filter');
 module.exports.createCardSearchCommand = createCardSearchCommand;
 module.exports.handleCardSearchButton = handleCardSearchButton;

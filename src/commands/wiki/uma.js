@@ -15,7 +15,7 @@ const { stars, rank, type } = require("../../utils/emoji.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('uma')
-        .setDescription('Look up a Playable Uma, her aptitudes, stat bonuses, and skills')
+        .setDescription('View Umamusume details')
         .addStringOption(option =>
             option
                 .setName('query')

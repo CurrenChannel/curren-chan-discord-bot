@@ -218,6 +218,6 @@ async function handleUmaSearchButton(interaction) {
     await interaction.update(payload);
 }
 
-module.exports = createUmaSearchCommand('umasearch', 'Search for Playable Umas by skill, star rarity, or server');
+module.exports = createUmaSearchCommand('umasearch', 'Search Umamusume by filters');
 module.exports.createUmaSearchCommand = createUmaSearchCommand;
 module.exports.handleUmaSearchButton = handleUmaSearchButton;

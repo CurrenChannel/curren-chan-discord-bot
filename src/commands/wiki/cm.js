@@ -12,7 +12,7 @@ const {
     MediaGalleryBuilder,
 } = require('discord.js');
 const { getGameData, formatSkillName } = require('../../utils/gamedata.js');
-const { type } = require('../../utils/emoji.js');
+const { type, e } = require('../../utils/emoji.js');
 
 const CM_LIST_URL = 'https://curren.channel/data/cm/list.json';
 
@@ -171,7 +171,7 @@ function formatTrackGeometrySection(track) {
 
     if (phases) {
         lines.push(
-            `**Phases:** Mid-Race ${phases.mid_race_m}m ➡ Late-Race ${phases.late_race_m}m ➡ Last Spurt ${phases.last_spurt_m}m`
+            `**Phases:** ${e("midRace")} Mid-Race ${phases.mid_race_m}m ➡ ${e("lateRace")} Late-Race ${phases.late_race_m}m ➡ ${e("lastSpurt")} Last Spurt ${phases.last_spurt_m}m`
         );
     }
 

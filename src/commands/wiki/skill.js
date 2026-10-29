@@ -12,7 +12,7 @@ const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('skill')
-        .setDescription('Look up an Umamusume skill and its exact mechanics')
+        .setDescription('View skill mechanics')
         .addStringOption(option =>
             option
                 .setName('query')

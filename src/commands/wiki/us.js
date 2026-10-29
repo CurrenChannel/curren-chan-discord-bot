@@ -1,2 +1,2 @@
 const { createUmaSearchCommand } = require('./umasearch');
-module.exports = createUmaSearchCommand('us', 'Search for Umas by filters');
+module.exports = createUmaSearchCommand('us', 'Search Umamusume by filters');

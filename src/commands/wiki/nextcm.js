@@ -107,7 +107,7 @@ async function buildNextCmPayload() {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nextcm')
-        .setDescription('View the upcoming Champions Meeting schedule, conditions, and track geometry'),
+        .setDescription('View next Champions Meeting details'),
 
     async execute(interaction) {
         await interaction.deferReply();

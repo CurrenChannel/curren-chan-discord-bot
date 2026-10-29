@@ -266,7 +266,7 @@ async function buildCardPayload({ cardIdOrQuery, view = 'effects', pageIndex = n
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('card')
-        .setDescription('Look up an Umamusume Support Card, its support effects by limit break, or its skills')
+        .setDescription('View Support Card details and its provided skills')
         .addStringOption(option =>
             option
                 .setName('query')

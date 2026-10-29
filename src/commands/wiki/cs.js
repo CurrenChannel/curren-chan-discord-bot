@@ -1,2 +1,2 @@
 const { createCardSearchCommand } = require('./cardsearch');
-module.exports = createCardSearchCommand('cs', 'Search for Support Cards by filters');
+module.exports = createCardSearchCommand('cs', 'Search Support Cards by filters');
