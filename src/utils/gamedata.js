@@ -2,6 +2,7 @@ const UMA_BASE_URL = 'https://curren.channel/data/uma/uma.json';
 const CHARACTERS_URL = 'https://curren.channel/data/gamedata/characters.json';
 const CARDS_URL = 'https://curren.channel/data/gamedata/cards.json';
 const SKILLS_URL = 'https://curren.channel/data/gamedata/skills.json';
+const TRACKS_URL = 'https://curren.channel/data/gamedata/tracks.json';
 
 const { skillIcon } = require("./emoji.js");
 
@@ -40,22 +41,24 @@ async function getGameData() {
         return cache;
     }
 
-    const [umaRes, charaRes, cardsRes, skillsRes] = await Promise.all([
+    const [umaRes, charaRes, cardsRes, skillsRes, tracksRes] = await Promise.all([
         fetch(UMA_BASE_URL),
         fetch(CHARACTERS_URL),
         fetch(CARDS_URL),
         fetch(SKILLS_URL),
+        fetch(TRACKS_URL),
     ]);
 
     if (!umaRes.ok || !charaRes.ok || !cardsRes.ok || !skillsRes.ok) {
         throw new Error('Failed to fetch one or more game data files from curren.channel');
     }
 
-    const [baseUmas, characters, cards, skills] = await Promise.all([
+    const [baseUmas, characters, cards, skills, tracks] = await Promise.all([
         umaRes.json(),
         charaRes.json(),
         cardsRes.json(),
         skillsRes.json(),
+        tracksRes.json(),
     ]);
 
     const baseUmaById = new Map();
@@ -108,15 +111,38 @@ async function getGameData() {
         }
     }
 
+    const trackById = new Map();
+    for (const t of tracks) {
+        trackById.set(Number(t.id), t);
+    }
+
+    const uniqueSkillToUma = new Map();
+    for (const c of characters) {
+        const uniqueIds = [
+            ...(c.skills?.unique_base || []),
+            ...(c.skills?.unique_upgraded || []),
+        ];
+        for (const uid of uniqueIds) {
+            const numId = Number(uid);
+            uniqueSkillToUma.set(numId, c);
+            if (numId >= 100000 && numId < 200000) {
+                uniqueSkillToUma.set(numId + 800000, c);
+            }
+        }
+    }
+
     cache = {
         baseUmas,
         characters,
         cards,
         skills,
+        tracks,
         baseUmaById,
         skillById,
         skillToUmas,
         skillToCards,
+        uniqueSkillToUma,
+        trackById,
     };
     lastFetched = Date.now();
     return cache;

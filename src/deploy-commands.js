@@ -31,6 +31,9 @@ for (const folder of commandFolders) {
     }
 }
 
+console.log("Global Commands:\n" + globalCommands.map(item => item.name).join('\n'));
+console.log("Guild Commands:\n" + guildCommands.map(item => item.name).join('\n'));
+
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {

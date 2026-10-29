@@ -107,6 +107,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
             return handleCardPageButton(interaction);
         }
         
+        if (interaction.customId.startsWith('accel_view:')) {
+            const { handleAccelButton } = require('./commands/wiki/accel');
+            return handleAccelButton(interaction);
+        }
+        
+        if (interaction.customId.startsWith('cm_nav:')) {
+            const { handleCmButton } = require('./commands/wiki/cm');
+            return handleCmButton(interaction);
+        }
+
         if (interaction.customId.startsWith('role_toggle_')) {
             try {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });

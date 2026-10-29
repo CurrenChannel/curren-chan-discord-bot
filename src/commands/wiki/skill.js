@@ -10,7 +10,6 @@ const {
 const { getGameData, RARITY_LABELS, formatSkillName, formatAbility } = require('../../utils/gamedata.js');
 
 module.exports = {
-    guildOnly: true,
     data: new SlashCommandBuilder()
         .setName('skill')
         .setDescription('Look up an Umamusume skill and its exact mechanics')
