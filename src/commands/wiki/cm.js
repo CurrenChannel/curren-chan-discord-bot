@@ -252,7 +252,7 @@ async function buildCmPayload(cmQuery) {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `### Champions Meeting #${cm.number}: ${cm.name}\n` +
+            `### Champions Meeting ${cm.number}: ${cm.name}\n` +
             `-# **Scheduled** ${dateRange}`
         )
     );
@@ -296,17 +296,17 @@ async function buildCmPayload(cmQuery) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId(`cm_nav:${prevCm ? prevCm.number : 'none'}`)
-                .setLabel(prevCm ? `◀ #${prevCm.number} ${prevCm.name}` : '◀ Previous')
+                .setLabel(prevCm ? `◀ ${prevCm.number} ${prevCm.name}` : '◀ Previous')
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(!prevCm),
             new ButtonBuilder()
                 .setCustomId(`cm_nav:curr`)
-                .setLabel(`CM #${cm.number} (${index + 1}/${cmList.length})`)
+                .setLabel(`CM ${cm.number} (${index + 1}/${cmList.length})`)
                 .setStyle(ButtonStyle.Primary)
                 .setDisabled(true),
             new ButtonBuilder()
                 .setCustomId(`cm_nav:${nextCm ? nextCm.number : 'none'}`)
-                .setLabel(nextCm ? `#${nextCm.number} ${nextCm.name} ▶` : 'Next ▶')
+                .setLabel(nextCm ? `${nextCm.number} ${nextCm.name} ▶` : 'Next ▶')
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(!nextCm)
         )
