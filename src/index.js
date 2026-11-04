@@ -8,7 +8,11 @@ const { getGameData } = require('./utils/gamedata.js');
 const { loadBotEmojis } = require("./utils/emoji.js");
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
     rest: {
         api: process.env.PROXY_URL,
     }
