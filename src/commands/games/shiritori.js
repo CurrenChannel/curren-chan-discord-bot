@@ -341,7 +341,7 @@ module.exports = {
 
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `### 📖 Shiritori — Rules & How to Play\n` +
+                    `### 📖 Shiritori Rules\n` +
                     `Shiritori (しりとり) is a word-chain game where each player must submit a word starting with the **last letter or kana** of the previous word.`
                 )
             );
@@ -352,14 +352,14 @@ module.exports = {
 
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `**💬 Core Rules**\n` +
-                    `• **Take Turns:** You cannot play two words in a row—wait for another player to answer first.\n` +
+                    `**💬 Rules**\n` +
+                    `• **Take Turns:** You cannot play two words in a row. Wait for another player to answer first.\n` +
                     `• **No Repeats:** Each word can only be used once per game.\n` +
-                    `• **Goal:** Games run until **100 valid words** are chained (or a custom length set at start).\n\n` +
-                    `**🌐 Game Modes & Special Rules**\n` +
+                    `• **Goal:** Get as many points as possible by answering with longer words.\n\n` +
+                    `**🌐 Supported Dictionaries**\n` +
                     `• **🇬🇧 English (\`en\`):** Standard English dictionary. Accents like \`é\` automatically normalize to \`e\`. *(1 pt per letter)*\n` +
                     `• **🇯🇵 Japanese (\`jp\`):** Type words in **Hiragana or Katakana** (no Kanji in your input!). Words **cannot end in \`ん\` (\`ン\`)**. Small kana (\`ゃ, ゅ, ょ, っ\`) become full-size (\`や, ゆ, よ, つ\`) for the next player, and trailing \`ー\` uses the preceding kana. *(3 pts per kana)*\n` +
-                    `• **🐴 Umamusume (\`uma\`):** Official Uma names! Spaces and punctuation are ignored when matching start/end letters. *(1 pt per letter)*`
+                    `• **🐴 Umamusume (\`uma\`):** Anything about Umamusume. If something's missing, ask kiki to put it in. *(1 pt per letter)*`
                 )
             );
 
