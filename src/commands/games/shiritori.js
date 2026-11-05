@@ -95,29 +95,29 @@ function getWordEnds(normWord, mode) {
 const KANJI_REGEX = /[\u4e00-\u9faf\u3400-\u4dbf々]/;
 
 function hasKanji(str) {
-    return KANJI_REGEX.test(str);
+    return Boolean(str) && KANJI_REGEX.test(str);
 }
 
 /**
  * Formats the display string for a matched dictionary entry.
- * - For JP: if `entry.word` contains Kanji, returns `${entry.word} (${typedReading})`.
- *   Otherwise returns `entry.word`.
- * - For EN / UMA: returns `entry.word`.
+ * Safely handles both entry objects ({ word, rawReading }) and plain strings.
  */
 function formatEntryDisplay(entry, typedInput, mode) {
-    if (mode !== 'jp') return entry.word;
-    if (hasKanji(entry.word)) {
-        return `${entry.word} (${typedInput})`;
+    if (!entry) return typedInput || 'Unknown';
+    if (typeof entry === 'string') return entry;
+
+    // Fallback to rawReading or typedInput if `entry.word` is empty/missing
+    const baseWord = String(entry.word || entry.rawReading || typedInput || '').trim();
+    const reading = String(typedInput || entry.rawReading || baseWord).trim();
+
+    if (mode !== 'jp') return baseWord;
+
+    if (hasKanji(baseWord) && reading && baseWord !== reading) {
+        return `${baseWord} (${reading})`;
     }
-    return entry.word;
+    return baseWord || reading;
 }
 
-/**
- * Loads and caches dictionary_<mode>.json from ./data/
- * - For 'jp': expects items like { word: "日本", readings: ["にほん", "にっぽん"] }
- *   (also supports plain strings as a fallback)
- * - For 'en' / 'uma': expects strings or { word: "..." }
- */
 function loadDictionary(mode) {
     if (dictionaryCache.has(mode)) return dictionaryCache.get(mode);
 
@@ -132,12 +132,16 @@ function loadDictionary(mode) {
 
     rawList.forEach((item, idx) => {
         if (mode === 'jp' && item && typeof item === 'object') {
-            const word = String(item.word || '').trim();
             const readings = Array.isArray(item.readings)
                 ? item.readings
                 : item.reading
                 ? [item.reading]
-                : [word];
+                : item.word
+                ? [item.word]
+                : [];
+
+            // Fallback to the first reading if `item.word` is empty or omitted
+            const word = String(item.word || readings[0] || '').trim();
 
             for (const r of readings) {
                 const norm = normalizeWord(r, 'jp');
@@ -148,15 +152,17 @@ function loadDictionary(mode) {
                 }
                 normalizedMap.get(norm).push({
                     id: `jp_${idx}`,
-                    word,
+                    word: word || r,
                     rawReading: r,
                 });
             }
             return;
         }
 
-        // EN / UMA
-        const wordStr = typeof item === 'string' ? item : item.word || item.name;
+        // EN / UMA (or plain string fallback)
+        const wordStr = String(
+            typeof item === 'string' ? item : item?.word || item?.name || ''
+        ).trim();
         const norm = normalizeWord(wordStr, mode);
         if (!norm) return;
 
@@ -400,9 +406,13 @@ module.exports = {
             }
 
             const [startNorm, startEntries] = validPool[Math.floor(Math.random() * validPool.length)];
-            const startEntry = startEntries[0];
+            const startEntry = Array.isArray(startEntries) ? startEntries[0] : startEntries;
             const startEnds = getWordEnds(startNorm, mode);
-            const startDisplay = formatEntryDisplay(startEntry, startEntry.rawReading, mode);
+            const startDisplay = formatEntryDisplay(
+                startEntry,
+                startEntry?.rawReading || startNorm,
+                mode
+            );
 
             const collector = interaction.channel.createMessageCollector({
                 filter: m => !m.author.bot && Boolean(m.content?.trim()),
@@ -413,7 +423,7 @@ module.exports = {
                 maxWords,
                 collector,
                 usedNorms: new Set([startNorm]),
-                usedEntryIds: new Set([startEntry.id]),
+                usedEntryIds: new Set([startEntry?.id || startNorm]),
                 currentWord: startDisplay,
                 requiredNextChar: startEnds.nextRequired,
                 lastUserId: null,
@@ -536,7 +546,7 @@ module.exports = {
 
                 gameState.usedNorms.add(norm);
                 gameState.usedEntryIds.add(chosenEntry.id);
-                gameState.currentWord = canonicalDisplay;
+                gameState.currentWord = canonicalDisplay; // Used by buildGameEndCard on stop/finish!
                 gameState.requiredNextChar = ends.nextRequired;
                 gameState.lastUserId = message.author.id;
                 gameState.chainCount += 1;
