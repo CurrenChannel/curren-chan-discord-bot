@@ -253,6 +253,11 @@ module.exports = {
         .setDescription('Play Shiritori word chain in chat!')
         .addSubcommand(sub =>
             sub
+                .setName('info')
+                .setDescription('View info for Shiritori game')
+        )
+        .addSubcommand(sub =>
+            sub
                 .setName('start')
                 .setDescription('Start a new Shiritori game in this channel')
                 .addStringOption(opt =>
@@ -317,6 +322,70 @@ module.exports = {
                     flags: MessageFlags.Ephemeral,
                 });
             }
+        }
+
+        // ==========================================
+        // 0. /shiritori info
+        // ==========================================
+        if (sub === 'info') {
+            const isDev =
+                Boolean(process.env.DEV_USER_ID) &&
+                interaction.user.id === process.env.DEV_USER_ID;
+            const isAdmin = Boolean(
+                interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)
+            );
+
+            const activeGame = activeGames.get(channelId);
+
+            const container = new ContainerBuilder().setAccentColor(0x5865F2);
+
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `### 📖 Shiritori — Rules & How to Play\n` +
+                    `Shiritori (しりとり) is a word-chain game where each player must submit a word starting with the **last letter or kana** of the previous word.`
+                )
+            );
+
+            container.addSeparatorComponents(
+                new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+            );
+
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `**💬 Core Rules**\n` +
+                    `• **Take Turns:** You cannot play two words in a row—wait for another player to answer first.\n` +
+                    `• **No Repeats:** Each word can only be used once per game.\n` +
+                    `• **Goal:** Games run until **100 valid words** are chained (or a custom length set at start).\n\n` +
+                    `**🌐 Game Modes & Special Rules**\n` +
+                    `• **🇬🇧 English (\`en\`):** Standard English dictionary. Accents like \`é\` automatically normalize to \`e\`. *(1 pt per letter)*\n` +
+                    `• **🇯🇵 Japanese (\`jp\`):** Type words in **Hiragana or Katakana** (no Kanji in your input!). Words **cannot end in \`ん\` (\`ン\`)**. Small kana (\`ゃ, ゅ, ょ, っ\`) become full-size (\`や, ゆ, よ, つ\`) for the next player, and trailing \`ー\` uses the preceding kana. *(3 pts per kana)*\n` +
+                    `• **🐴 Umamusume (\`uma\`):** Official Uma names! Spaces and punctuation are ignored when matching start/end letters. *(1 pt per letter)*`
+                )
+            );
+
+            if (activeGame) {
+                container.addSeparatorComponents(
+                    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+                );
+
+                container.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `**🟢 Active Game in This Channel**\n` +
+                        `• **Mode:** ${MODE_LABELS[activeGame.mode]} *(${activeGame.chainCount}/${activeGame.maxWords} words)*\n` +
+                        `• **Current Word:** **${activeGame.currentWord}**\n` +
+                        `• **Next word must start with:** **\`${activeGame.requiredNextChar.toUpperCase()}\`**`
+                    )
+                );
+            }
+
+            const flags = isDev || isAdmin
+                ? MessageFlags.IsComponentsV2
+                : MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral;
+
+            return interaction.reply({
+                components: [container],
+                flags,
+            });
         }
 
         // ==========================================
@@ -435,7 +504,7 @@ module.exports = {
 
             await interaction.reply(
                 buildStateCard({
-                    title: `🎮 ${MODE_LABELS[mode]} Started!`,
+                    title: `💬 ${MODE_LABELS[mode]} Started!`,
                     color: 0x3BA55D,
                     lines: [
                         `• **Goal:** **${maxWords}** valid words`,
