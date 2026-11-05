@@ -542,7 +542,7 @@ module.exports = {
                 // Valid word
                 const chosenEntry = unusedEntry || matchingEntries[0];
                 const canonicalDisplay = formatEntryDisplay(chosenEntry, rawInput, mode);
-                const pointsEarned = norm.length;
+                const pointsEarned = norm.length * (mode === 'jp' ? 3 : 1);
 
                 gameState.usedNorms.add(norm);
                 gameState.usedEntryIds.add(chosenEntry.id);
