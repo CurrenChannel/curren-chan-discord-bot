@@ -3,17 +3,17 @@ const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('say')
-        .setDescription('Make the bot say something in chat (Admin Only)')
+        .setDescription('Make me say something :)')
         .addStringOption(opt =>
             opt
                 .setName('message')
-                .setDescription('The message you want the bot to say')
+                .setDescription('The message you want me to say')
                 .setRequired(true)
         )
         .addChannelOption(opt =>
             opt
                 .setName('channel')
-                .setDescription('Optional channel to send the message into')
+                .setDescription('Channel to send the message into')
                 .setRequired(false)
         ),
 

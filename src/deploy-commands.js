@@ -22,7 +22,7 @@ for (const folder of commandFolders) {
                 command.data.setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
             }
 
-            if (command.guildOnly || folder === 'admin') {
+            if (command.guildOnly) {
                 guildCommands.push(command.data.toJSON());
             } else {
                 globalCommands.push(command.data.toJSON());
