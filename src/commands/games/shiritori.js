@@ -177,7 +177,13 @@ function loadDictionary(mode) {
         }
     });
 
-    const dict = { normalizedMap };
+    const dict = {
+        normalizedMap,
+        validKeys: [...normalizedMap.keys()].filter(norm => {
+            const ends = getWordEnds(norm, mode);
+            return ends && !(mode === 'jp' && ends.rawLast === 'ん');
+        }),
+    };
     dictionaryCache.set(mode, dict);
     return dict;
 }
@@ -448,6 +454,12 @@ module.exports = {
                 });
             }
 
+            await interaction.deferReply();
+
+            if (interaction.channel?.isThread() && !interaction.channel.joined && interaction.channel.joinable) {
+                await interaction.channel.join().catch(() => {});
+            }
+
             const mode = interaction.options.getString('mode');
             const maxWords = interaction.options.getInteger('length') ?? 100;
 
@@ -455,26 +467,19 @@ module.exports = {
             try {
                 dict = loadDictionary(mode);
             } catch (err) {
-                return interaction.reply({
+                return interaction.editReply({
                     content: `❌ Could not load dictionary for **${mode}**: \`${err.message}\``,
-                    flags: MessageFlags.Ephemeral,
                 });
             }
 
-            // Pick a valid starting word (for JP, ensure its reading doesn't end in ん)
-            const validPool = [...dict.normalizedMap.entries()].filter(([norm]) => {
-                const ends = getWordEnds(norm, mode);
-                return ends && !(mode === 'jp' && ends.rawLast === 'ん');
-            });
-
-            if (validPool.length === 0) {
-                return interaction.reply({
+            if (!dict.validKeys || dict.validKeys.length === 0) {
+                return interaction.editReply({
                     content: `❌ The **${mode}** dictionary has no valid starting words!`,
-                    flags: MessageFlags.Ephemeral,
                 });
             }
 
-            const [startNorm, startEntries] = validPool[Math.floor(Math.random() * validPool.length)];
+            const startNorm = dict.validKeys[Math.floor(Math.random() * dict.validKeys.length)];
+            const startEntries = dict.normalizedMap.get(startNorm);
             const startEntry = Array.isArray(startEntries) ? startEntries[0] : startEntries;
             const startEnds = getWordEnds(startNorm, mode);
             const startDisplay = formatEntryDisplay(
@@ -502,7 +507,9 @@ module.exports = {
 
             activeGames.set(channelId, gameState);
 
-            await interaction.reply(
+            const pointRuleText = mode === 'jp' ? 'Each kana = 3 pts' : 'Each letter = 1 pt';
+
+            await interaction.editReply(
                 buildStateCard({
                     title: `💬 ${MODE_LABELS[mode]} Started!`,
                     color: 0x3BA55D,
@@ -510,7 +517,7 @@ module.exports = {
                         `• **Goal:** **${maxWords}** valid words`,
                         `• **Starting Word:** **${startDisplay}**`,
                         `• **Next word must start with:** \`${startEnds.nextRequired.toUpperCase()}\``,
-                        `-# Type a valid word in chat! Each letter/kana = 1 pt. Stop anytime with \`/shiritori stop\`.`,
+                        `-# Type a valid word in chat! ${pointRuleText}. Stop anytime with \`/shiritori stop\`.`,
                     ],
                 })
             );
