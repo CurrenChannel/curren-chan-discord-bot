@@ -192,16 +192,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`❌ Command error in /${interaction.commandName}:`, error);
-        const errorMessage = { content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral };
+    await command.execute(interaction);
+} catch (error) {
+    console.error(`❌ Command error in /${interaction.commandName}:`, error);
+
+    if (error?.code === 10062 || error?.code === 40060) return;
+
+    const errorMessage = {
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+    };
+
+    try {
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(errorMessage);
         } else {
             await interaction.reply(errorMessage);
         }
+    } catch {
     }
+}
 });
 
 client.login(process.env.DISCORD_TOKEN);
