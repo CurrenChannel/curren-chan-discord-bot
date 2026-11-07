@@ -106,16 +106,21 @@ function formatEntryDisplay(entry, typedInput, mode) {
     if (!entry) return typedInput || 'Unknown';
     if (typeof entry === 'string') return entry;
 
-    // Fallback to rawReading or typedInput if `entry.word` is empty/missing
     const baseWord = String(entry.word || entry.rawReading || typedInput || '').trim();
     const reading = String(typedInput || entry.rawReading || baseWord).trim();
 
-    if (mode !== 'jp') return baseWord;
-
-    if (hasKanji(baseWord) && reading && baseWord !== reading) {
-        return `${baseWord} (${reading})`;
+    if (mode === 'jp') {
+        if (hasKanji(baseWord) && reading && baseWord !== reading) {
+            return `${baseWord} (${reading})`;
+        }
+        return baseWord || reading;
     }
-    return baseWord || reading;
+
+    if (entry.hasCustomReading && reading && baseWord.toLowerCase() !== reading.toLowerCase()) {
+        return `${baseWord} (${ entry.rawReading || reading })`;
+    }
+
+    return baseWord;
 }
 
 function loadDictionary(mode) {
@@ -127,39 +132,30 @@ function loadDictionary(mode) {
     }
 
     const rawList = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    // normReading -> Array of { id, word, rawReading }
     const normalizedMap = new Map();
 
     rawList.forEach((item, idx) => {
-        if (mode === 'jp' && item && typeof item === 'object') {
-            const readings = Array.isArray(item.readings)
-                ? item.readings
-                : item.reading
-                ? [item.reading]
-                : item.word
-                ? [item.word]
-                : [];
-
-            // Fallback to the first reading if `item.word` is empty or omitted
+        if (item && typeof item === 'object' && (Array.isArray(item.readings) || item.reading)) {
+            const readings = Array.isArray(item.readings) ? item.readings : [item.reading];
             const word = String(item.word || readings[0] || '').trim();
 
             for (const r of readings) {
-                const norm = normalizeWord(r, 'jp');
+                const norm = normalizeWord(r, mode);
                 if (!norm) continue;
 
                 if (!normalizedMap.has(norm)) {
                     normalizedMap.set(norm, []);
                 }
                 normalizedMap.get(norm).push({
-                    id: `jp_${idx}`,
+                    id: `${mode}_${idx}`,
                     word: word || r,
                     rawReading: r,
+                    hasCustomReading: true,
                 });
             }
             return;
         }
 
-        // EN / UMA (or plain string fallback)
         const wordStr = String(
             typeof item === 'string' ? item : item?.word || item?.name || ''
         ).trim();
@@ -167,14 +163,14 @@ function loadDictionary(mode) {
         if (!norm) return;
 
         if (!normalizedMap.has(norm)) {
-            normalizedMap.set(norm, [
-                {
-                    id: `${mode}_${idx}`,
-                    word: wordStr,
-                    rawReading: wordStr,
-                },
-            ]);
+            normalizedMap.set(norm, []);
         }
+        normalizedMap.get(norm).push({
+            id: `${mode}_${idx}`,
+            word: wordStr,
+            rawReading: wordStr,
+            hasCustomReading: false,
+        });
     });
 
     const dict = {
@@ -423,7 +419,7 @@ module.exports = {
             if (rows.length === 0) {
                 return interaction.reply(
                     buildStateCard({
-                        title: `🏆 Shiritori Leaderboard ${modeTitle}`,
+                        title: `Shiritori Leaderboard ${modeTitle}`,
                         lines: ['*No points recorded in this server yet! Start a game with `/shiritori start`.*'],
                     })
                 );
@@ -436,7 +432,7 @@ module.exports = {
 
             return interaction.reply(
                 buildStateCard({
-                    title: `🏆 Shiritori Leaderboard ${modeTitle}`,
+                    title: `Shiritori Leaderboard ${modeTitle}`,
                     color: 0xF59E0B,
                     lines,
                 })
