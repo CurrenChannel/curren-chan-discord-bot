@@ -64,11 +64,13 @@ function normalizeWord(raw, mode) {
         .toLowerCase();
 
     // Must contain only letters (and spaces/hyphens/apostrophes for Uma names)
-    if (mode === 'en' && !/^[a-z]+$/.test(deaccented)) return null;
-    if (mode === 'uma' && !/^[a-z0-9\s\-'.☆♡]+$/.test(deaccented)) return null;
+    if (mode === 'en') {
+        if (!/^[a-z]+$/.test(deaccented)) return null;
+        return deaccented;
+    }
 
     // Strip spaces/punctuation so dictionary lookup is consistent
-    const clean = deaccented.replace(/[^a-z0-9]/g, '');
+    const clean = deaccented.replace(/[^a-z]/g, '');
     return clean || null;
 }
 
