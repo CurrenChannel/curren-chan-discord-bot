@@ -522,6 +522,7 @@ module.exports = {
 
             collector.on('collect', async message => {
                 const rawInput = message.content.trim();
+                if (/^(http|[^A-Za-z])/.test(rawInput)) return;
                 if (mode !== 'uma' && /\s/.test(rawInput)) return;
 
                 const norm = normalizeWord(rawInput, mode);
