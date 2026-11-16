@@ -158,3 +158,6 @@ vite.config.ts.timestamp-*
 
 # Cygames Database files
 *.mdb
+
+# Extraction files
+src/data/extract

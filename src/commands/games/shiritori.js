@@ -23,6 +23,7 @@ const MODE_LABELS = {
     en: 'English Shiritori',
     jp: 'Japanese Shiritori',
     uma: 'Umamusume Shiritori',
+    poke: 'Pokemon Shiritori'
 };
 
 // Map small kana to full-size kana for determining the next starting character
@@ -272,7 +273,8 @@ module.exports = {
                         .addChoices(
                             { name: 'English', value: 'en' },
                             { name: 'Japanese', value: 'jp' },
-                            { name: 'Umamusume', value: 'uma' }
+                            { name: 'Umamusume', value: 'uma' },
+                            { name: 'Pokemon', value: 'poke' }
                         )
                 )
                 .addIntegerOption(opt =>
@@ -302,7 +304,8 @@ module.exports = {
                             { name: 'All Modes Combined', value: 'all' },
                             { name: 'English', value: 'en' },
                             { name: 'Japanese', value: 'jp' },
-                            { name: 'Umamusume', value: 'uma' }
+                            { name: 'Umamusume', value: 'uma' },
+                            { name: 'Pokemon', value: 'poke' }
                         )
                 )
         ),
@@ -360,10 +363,11 @@ module.exports = {
                     `• **Take Turns:** You cannot play two words in a row. Wait for another player to answer first.\n` +
                     `• **No Repeats:** Each word can only be used once per game.\n` +
                     `• **Goal:** Get as many points as possible by answering with longer words.\n\n` +
-                    `**🌐 Supported Dictionaries**\n` +
-                    `• **🇬🇧 English (\`en\`):** Standard English dictionary. Accents like \`é\` automatically normalize to \`e\`. *(1 pt per letter)*\n` +
-                    `• **🇯🇵 Japanese (\`jp\`):** Type words in **Hiragana or Katakana** (no Kanji in your input!). Words **cannot end in \`ん\` (\`ン\`)**. Small kana (\`ゃ, ゅ, ょ, っ\`) become full-size (\`や, ゆ, よ, つ\`) for the next player, and trailing \`ー\` uses the preceding kana. *(3 pts per kana)*\n` +
-                    `• **🐴 Umamusume (\`uma\`):** Anything about Umamusume. If something's missing, ask kiki to put it in. *(1 pt per letter)*`
+                    `**🌐 Dictionaries**\n` +
+                    `• **English (\`en\`):** Standard English dictionary. *(1 pt per letter)*\n` +
+                    `• **Japanese (\`jp\`):** Type words in **Hiragana or Katakana** NOUNS ONLY. Words **cannot end in \`ん\` (\`ン\`)**. Trailing \`ー\` uses the preceding kana. *(3 pts per kana)*\n` +
+                    `• **Umamusume (\`uma\`):** Anything about Umamusume. If something's missing, ask kiki to put it in :) *(1 pt per letter)*` +
+                    `• **Pokemon (\`poke\`):** Pokemon names, abilities, items and moves *(1 pt per letter)*`
                 )
             );
 
@@ -523,7 +527,7 @@ module.exports = {
             collector.on('collect', async message => {
                 const rawInput = message.content.trim();
                 if (/^(http|[^A-Za-z\u3040-\u309F\u30A0-\u30FF])/.test(rawInput)) return;
-                if (mode !== 'uma' && /\s/.test(rawInput)) return;
+                if ((mode === 'en' || mode === 'jp') && /\s/.test(rawInput)) return;
 
                 const norm = normalizeWord(rawInput, mode);
                 if (!norm) return;
