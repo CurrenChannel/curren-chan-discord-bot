@@ -366,7 +366,7 @@ module.exports = {
                     `**🌐 Dictionaries**\n` +
                     `• **English (\`en\`):** Standard English dictionary. *(1 pt per letter)*\n` +
                     `• **Japanese (\`jp\`):** Type words in **Hiragana or Katakana** NOUNS ONLY. Words **cannot end in \`ん\` (\`ン\`)**. Trailing \`ー\` uses the preceding kana. *(3 pts per kana)*\n` +
-                    `• **Umamusume (\`uma\`):** Anything about Umamusume. If something's missing, ask kiki to put it in :) *(1 pt per letter)*` +
+                    `• **Umamusume (\`uma\`):** Anything about Umamusume. If something's missing, ask kiki to put it in :) *(1 pt per letter)*\n` +
                     `• **Pokemon (\`poke\`):** Pokemon names, abilities, items and moves *(1 pt per letter)*`
                 )
             );
