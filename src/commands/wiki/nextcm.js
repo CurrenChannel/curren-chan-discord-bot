@@ -64,7 +64,7 @@ async function buildNextCmPayload() {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `### Next Champions Meeting — #${cm.number}: ${cm.name}\n` +
+            `### Next Champions Meeting — ${cm.number}: ${cm.name}\n` +
             `-# **Scheduled:** ${formatDateWithCountdown(cm)}`
         )
     );
